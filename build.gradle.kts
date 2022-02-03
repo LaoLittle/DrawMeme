@@ -7,7 +7,7 @@ plugins {
 }
 
 group = "org.laolittle.plugin.draw"
-version = "1.0"
+version = "1.0.1"
 
 repositories {
     mavenCentral()

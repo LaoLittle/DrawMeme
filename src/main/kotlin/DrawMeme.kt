@@ -28,7 +28,7 @@ object DrawMeme : KotlinPlugin(
     JvmPluginDescription(
         id = "org.laolittle.plugin.draw.DrawMeme",
         name = "DrawMeme",
-        version = "1.0",
+        version = "1.0.1",
     ) {
         author("LaoLittle")
 
