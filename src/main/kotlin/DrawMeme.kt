@@ -14,7 +14,6 @@ import net.mamoe.mirai.message.data.At
 import net.mamoe.mirai.message.data.Image.Key.queryUrl
 import net.mamoe.mirai.message.data.MessageSource.Key.quote
 import net.mamoe.mirai.message.data.PlainText
-import net.mamoe.mirai.message.data.firstIsInstance
 import net.mamoe.mirai.message.data.firstIsInstanceOrNull
 import net.mamoe.mirai.message.nextMessage
 import net.mamoe.mirai.utils.info
@@ -28,17 +27,18 @@ object DrawMeme : KotlinPlugin(
     JvmPluginDescription(
         id = "org.laolittle.plugin.draw.DrawMeme",
         name = "DrawMeme",
-        version = "1.0.1",
+        version = "1.0.2",
     ) {
         author("LaoLittle")
 
         dependsOn(
-            PluginDependency("org.laolittle.plugin.SkikoMirai", ">=1.0", true)
+            PluginDependency("org.laolittle.plugin.SkikoMirai", ">=1.0.1", true)
         )
     }
 ) {
     override fun onEnable() {
         logger.info { "Plugin loaded" }
+
         globalEventChannel().subscribeGroupMessages {
             startsWith("#ph") { str ->
                 val processed = message.firstIsInstanceOrNull<At>()?.let {
@@ -52,7 +52,6 @@ object DrawMeme : KotlinPlugin(
 
                 val leftText = TextLine.make(words[0], MiSansBold88)
                 val leftPorn = Surface.makeRasterN32Premul(leftText.width.toInt() + (widthPlus shl 1), phHeight)
-
                 val paint = Paint().apply {
                     isAntiAlias = true
                 }
@@ -125,13 +124,18 @@ object DrawMeme : KotlinPlugin(
                     nextMessage(30_000) { event -> event.message.contains(MiraiImage) }
                 }.getOrElse { e ->
                     when (e) {
-                        is TimeoutCancellationException -> return@startsWith
+                        is TimeoutCancellationException -> {
+                            subject.sendMessage(PlainText("超时未发送").plus(message.quote()))
+                            return@startsWith
+                        }
                         else -> throw e
                     }
-                }).runCatching {
-                    firstIsInstance<MiraiImage>()
-                }.onFailure { subject.sendMessage(PlainText("超时未发送").plus(message.quote())) }.getOrNull()
+                }).firstIsInstanceOrNull<MiraiImage>()
                     ?: return@startsWith
+
+                val paint = Paint().apply {
+                    isAntiAlias = true
+                }
 
                 val skikoImage = withContext(Dispatchers.IO) {
                     URL(image.queryUrl()).openStream().use { input ->
@@ -140,56 +144,237 @@ object DrawMeme : KotlinPlugin(
                     }
                 }
 
-                val paint = Paint().apply {
-                    isAntiAlias = true
-                }
-
                 val h = skikoImage.height
                 val w = skikoImage.width
                 val foo = h / 6
-                val bar = foo / (1.4f)
+                val bar = foo / 1.4f
                 val fontSize = if (bar.toInt() * content.length > w) ((w * 0.8f) / content.length) else bar
                 val text = TextLine.make(content, Fonts["MiSans-Bold.ttf", fontSize])
 
-                val surface = Surface.makeRasterN32Premul(skikoImage.width, h + (foo * 1.4f).toInt())
-                skikoImage.imageInfo
-
-                surface.canvas.apply {
-                    clear(Color.BLACK)
-                    drawImage(skikoImage, 0F, 0F, paint.apply {
-                        colorFilter = ColorFilter.makeMatrix(
-                            ColorMatrix(
-                                0.33F, 0.38F, 0.29F, 0F, 0F,
-                                0.33F, 0.38F, 0.29F, 0F, 0F,
-                                0.33F, 0.38F, 0.29F, 0F, 0F,
-                                0.33F, 0.38F, 0.29F, 1F, 0F,
+                Surface.makeRasterN32Premul(skikoImage.width, h + (foo * 1.4f).toInt()).apply {
+                    canvas.apply {
+                        clear(Color.BLACK)
+                        drawImage(skikoImage, 0F, 0F, paint.apply {
+                            colorFilter = ColorFilter.makeMatrix(
+                                ColorMatrix(
+                                    0.33F, 0.38F, 0.29F, 0F, 0F,
+                                    0.33F, 0.38F, 0.29F, 0F, 0F,
+                                    0.33F, 0.38F, 0.29F, 0F, 0F,
+                                    0.33F, 0.38F, 0.29F, 1F, 0F,
+                                )
                             )
-                        )
-                    })
+                        })
 
-                    drawTextLine(text,
-                        ((surface.width - text.width) / 2),
-                        h + ((foo + text.height) / 2),
-                        paint.apply { color = Color.WHITE })
+                        drawTextLine(text,
+                            ((width - text.width) / 2),
+                            h + ((foo + text.height) / 2),
+                            paint.apply { color = Color.WHITE })
+                    }
+
+                    toExternalResource().use { res -> subject.sendImage(res) }
                 }
-
-                surface.toExternalResource().use { res -> subject.sendImage(res) }
-
             }
 
-            /*(startsWith("5000兆") or startsWith("5k兆")) Five@{ str ->
-                val processed = message.firstIsInstanceOrNull<At>()?.let {
-                    subject[it.target]?.nameCardOrNick?.let { card -> str.replace("@${it.target}", card) }
-                } ?: str
+            /**
+             * [5000choyen](https://github.com/yurafuca/5000choyen)
+             * @author cssxsh
+             */
+            finding(Regex("#5(?:000|k)兆[\\s　]*(.+)")) Five@{ result ->
+                /*val processed = message.firstIsInstanceOrNull<At>()?.let {
+                    subject[it.target]?.nameCardOrNick?.let { card -> result.groupValues[1].replace("@${it.target}", card) }
+                } ?: result.groupValues[1]*/
+
+                val processed = result.groupValues[1].let { str ->
+                    message.firstIsInstanceOrNull<At>()?.let {
+                        subject[it.target]?.nameCardOrNick?.let { card ->
+                            str.replace(
+                                "@${it.target}",
+                                card
+                            )
+                        }
+                    } ?: str
+                }
 
                 val words = processed.split() ?: return@Five
 
-                val paint = Paint().apply {
-                    isAntiAlias = true
-                }
+                val topText = TextLine.make(words[0], Fonts["Noto Sans SC", FontStyle.BOLD])
+                val bottomText = TextLine.make(words[1], Fonts["Noto Serif SC", FontStyle.BOLD])
+                val width = maxOf(topText.width + 70, bottomText.width + 250).toInt() + 30
 
-                val topText = TextLine.make("Text", Fonts["", 88F])
-            }*/
+                Surface.makeRasterN32Premul(width, 290).apply {
+                    canvas.apply {
+                        skew(-0.45F, 0F)
+                        String(Character.toChars(Integer.parseInt("1F601", 16)))
+
+                        val topX = 70F
+                        val topY = 100F
+                        val paintTop = Paint().apply {
+                            isAntiAlias = true
+                            setStroke(true)
+                            strokeCap = PaintStrokeCap.ROUND
+                            strokeJoin = PaintStrokeJoin.ROUND
+                        }
+                        // 黒色
+                        drawTextLine(topText, topX + 4, topY + 4, paintTop.apply {
+                            shader = null
+                            color = Color.makeRGB(0, 0, 0)
+                            strokeWidth = 22F
+                        })
+                        // 銀色
+                        drawTextLine(topText, topX + 4, topY + 4, paintTop.apply {
+                            shader = Shader.makeLinearGradient(
+                                0F, 24F, 0F, 122F, intArrayOf(
+                                    Color.makeRGB(0, 15, 36),
+                                    Color.makeRGB(255, 255, 255),
+                                    Color.makeRGB(55, 58, 59),
+                                    Color.makeRGB(55, 58, 59),
+                                    Color.makeRGB(200, 200, 200),
+                                    Color.makeRGB(55, 58, 59),
+                                    Color.makeRGB(25, 20, 31),
+                                    Color.makeRGB(240, 240, 240),
+                                    Color.makeRGB(166, 175, 194),
+                                    Color.makeRGB(50, 50, 50)
+                                ), floatArrayOf(0.0F, 0.10F, 0.18F, 0.25F, 0.5F, 0.75F, 0.85F, 0.91F, 0.95F, 1F)
+                            )
+                            strokeWidth = 20F
+                        })
+                        // 黒色
+                        drawTextLine(topText, topX, topY, paintTop.apply {
+                            shader = null
+                            color = Color.makeRGB(0, 0, 0)
+                            strokeWidth = 16F
+                        })
+                        // 金色
+                        drawTextLine(topText, topX, topY, paintTop.apply {
+                            shader = Shader.makeLinearGradient(
+                                0F, 20F, 0F, 100F, intArrayOf(
+                                    Color.makeRGB(253, 241, 0),
+                                    Color.makeRGB(245, 253, 187),
+                                    Color.makeRGB(255, 255, 255),
+                                    Color.makeRGB(253, 219, 9),
+                                    Color.makeRGB(127, 53, 0),
+                                    Color.makeRGB(243, 196, 11),
+                                ), floatArrayOf(0.0F, 0.25F, 0.4F, 0.75F, 0.9F, 1F)
+                            )
+                            strokeWidth = 10F
+                        })
+                        // 黒色
+                        drawTextLine(topText, topX + 2, topY - 3, paintTop.apply {
+                            shader = null
+                            color = Color.makeRGB(0, 0, 0)
+                            strokeWidth = 6F
+                        })
+                        // 白色
+                        drawTextLine(topText, topX, topY - 3, paintTop.apply {
+                            shader = null
+                            color = Color.makeRGB(255, 255, 255)
+                            strokeWidth = 6F
+                        })
+                        // 赤色
+                        drawTextLine(topText, topX, topY - 3, paintTop.apply {
+                            shader = Shader.makeLinearGradient(
+                                0F, 20F, 0F, 100F, intArrayOf(
+                                    Color.makeRGB(255, 100, 0),
+                                    Color.makeRGB(123, 0, 0),
+                                    Color.makeRGB(240, 0, 0),
+                                    Color.makeRGB(5, 0, 0),
+                                ), floatArrayOf(0.0F, 0.5F, 0.51F, 1F)
+                            )
+                            strokeWidth = 4F
+                        })
+                        // 赤色
+                        drawTextLine(topText, topX, topY - 3, paintTop.setStroke(false).apply {
+                            shader = Shader.makeLinearGradient(
+                                0F, 20F, 0F, 100F, intArrayOf(
+                                    Color.makeRGB(230, 0, 0),
+                                    Color.makeRGB(123, 0, 0),
+                                    Color.makeRGB(240, 0, 0),
+                                    Color.makeRGB(5, 0, 0),
+                                ), floatArrayOf(0.0F, 0.5F, 0.51F, 1F)
+                            )
+                        })
+
+
+                        val bottomX = 250F
+                        val bottomY = 230F
+                        val paint = Paint().apply {
+                            isAntiAlias = true
+                            setStroke(true)
+                            strokeCap = PaintStrokeCap.ROUND
+                            strokeJoin = PaintStrokeJoin.ROUND
+                        }
+
+                        // 黒色
+                        drawTextLine(bottomText, bottomX + 5, bottomY + 2, paint.apply {
+                            shader = null
+                            color = Color.makeRGB(0, 0, 0)
+                            strokeWidth = 22F
+                        })
+                        // 銀色
+                        drawTextLine(bottomText, bottomX + 5, bottomY + 2, paint.apply {
+                            shader = Shader.makeLinearGradient(
+                                0F, bottomY - 80, 0F, bottomY + 18, intArrayOf(
+                                    Color.makeRGB(0, 15, 36),
+                                    Color.makeRGB(250, 250, 250),
+                                    Color.makeRGB(150, 150, 150),
+                                    Color.makeRGB(55, 58, 59),
+                                    Color.makeRGB(25, 20, 31),
+                                    Color.makeRGB(240, 240, 240),
+                                    Color.makeRGB(166, 175, 194),
+                                    Color.makeRGB(50, 50, 50)
+                                ), floatArrayOf(0.0F, 0.25F, 0.5F, 0.75F, 0.85F, 0.91F, 0.95F, 1F)
+                            )
+                            strokeWidth = 19F
+                        })
+                        // 黒色
+                        drawTextLine(bottomText, bottomX, bottomY, paint.apply {
+                            shader = null
+                            color = Color.makeRGB(16, 25, 58)
+                            strokeWidth = 17F
+                        })
+                        // 白色
+                        drawTextLine(bottomText, bottomX, bottomY, paint.apply {
+                            shader = null
+                            color = Color.makeRGB(221, 221, 221)
+                            strokeWidth = 8F
+                        })
+                        // 紺色
+                        drawTextLine(bottomText, bottomX, bottomY, paint.apply {
+                            shader = Shader.makeLinearGradient(
+                                0F, bottomY - 80, 0F, bottomY, intArrayOf(
+                                    Color.makeRGB(16, 25, 58),
+                                    Color.makeRGB(255, 255, 255),
+                                    Color.makeRGB(16, 25, 58),
+                                    Color.makeRGB(16, 25, 58),
+                                    Color.makeRGB(16, 25, 58),
+                                ), floatArrayOf(0.0F, 0.03F, 0.08F, 0.2F, 1F)
+                            )
+                            strokeWidth = 7F
+                        })
+                        // 銀色
+                        drawTextLine(bottomText, bottomX, bottomY - 3, paint.setStroke(false).apply {
+                            shader = Shader.makeLinearGradient(
+                                0F, bottomY - 80, 0F, bottomY, intArrayOf(
+                                    Color.makeRGB(245, 246, 248),
+                                    Color.makeRGB(255, 255, 255),
+                                    Color.makeRGB(195, 213, 220),
+                                    Color.makeRGB(160, 190, 201),
+                                    Color.makeRGB(160, 190, 201),
+                                    Color.makeRGB(196, 215, 222),
+                                    Color.makeRGB(255, 255, 255)
+                                ), floatArrayOf(0.0F, 0.15F, 0.35F, 0.5F, 0.51F, 0.52F, 1F)
+                            )
+                            strokeWidth = 19F
+                        })
+                    }
+
+                    toExternalResource().use { subject.sendImage(it) }
+                }
+            }
+
+            "" {
+                String
+            }
         }
     }
 }
