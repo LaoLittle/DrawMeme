@@ -3,9 +3,7 @@ package org.laolittle.plugin.draw
 import io.ktor.client.*
 import io.ktor.client.engine.okhttp.*
 import io.ktor.client.request.*
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.TimeoutCancellationException
-import kotlinx.coroutines.withContext
 import net.mamoe.mirai.console.plugin.description.PluginDependency
 import net.mamoe.mirai.console.plugin.jvm.JvmPluginDescription
 import net.mamoe.mirai.console.plugin.jvm.KotlinPlugin
@@ -26,9 +24,7 @@ import org.laolittle.plugin.Fonts
 import org.laolittle.plugin.draw.Emoji.EmojiUtil.toEmoji
 import org.laolittle.plugin.toExternalResource
 import java.io.File
-import java.io.FileOutputStream
 import java.io.InputStream
-import java.net.URL
 import net.mamoe.mirai.message.data.Image as MiraiImage
 
 object DrawMeme : KotlinPlugin(
@@ -145,9 +141,8 @@ object DrawMeme : KotlinPlugin(
                     isAntiAlias = true
                 }
 
-                val skikoImage = withContext(Dispatchers.IO) {
-                    URL(image.queryUrl()).openStream().use { input ->
-                        requireNotNull(input)
+                val skikoImage = HttpClient(OkHttp).use { client ->
+                    client.get<InputStream>(image.queryUrl()).use { input ->
                         Image.makeFromEncoded(input.readBytes())
                     }
                 }
@@ -381,22 +376,25 @@ object DrawMeme : KotlinPlugin(
 
             finding(Regex("""^([\uD83D\uDD00-\uD83E\uDF00]).*([\uD83D\uDD00-\uD83E\uDF00])""")) {
                 val emojiMix = "https://www.gstatic.com/android/keyboard/emojikitchen"
-                val getEmoji: suspend (Emoji, Emoji) -> InputStream? = Here@{ main: Emoji, aux: Emoji ->
+                val getEmoji: suspend (Emoji, Emoji) -> ByteArray? = Here@{ main: Emoji, aux: Emoji ->
                     val mainCode = main.code.toString(16)
                     val auxCode = aux.code.toString(16)
                     val date = Emoji.supportedEmojis[main.code] ?: return@Here null
 
-                    val file = dataFolder.resolve("emojimix")
+                    val emojiMixFolder = dataFolder.resolve("emojimix")
                         .also(File::mkdirs)
-                        .resolve("u${mainCode}_u${auxCode}.png")
+
+                    val fileName = "u${mainCode}_u${auxCode}.png"
+                    val file = emojiMixFolder
+                        .resolve(fileName)
+                    val giaFile = emojiMixFolder.resolve("u${auxCode}_u${mainCode}.png")
 
                     return@Here kotlin.runCatching {
-                        if (file.isFile) file.inputStream()
+                        if (file.isFile) file.readBytes()
+                        else if (giaFile.isFile) giaFile.readBytes()
                         else HttpClient(OkHttp).use { client ->
-                            client.get<InputStream>("$emojiMix/$date/u$mainCode/u${mainCode}_u${auxCode}.png").also { input ->
-                               FileOutputStream(file).use { output ->
-                                   input.copyTo(output)
-                               }
+                            client.get<ByteArray>("$emojiMix/$date/u$mainCode/$fileName").also { bytes ->
+                                file.writeBytes(bytes)
                             }
                         }
                     }.getOrNull()
@@ -405,11 +403,11 @@ object DrawMeme : KotlinPlugin(
                 val first = it.groupValues[1].toEmoji()
                 val second = it.groupValues[2].toEmoji()
 
-                val stream = kotlin.runCatching {
+                val bytes = kotlin.runCatching {
                     getEmoji(first, second) ?: getEmoji(second,first)
                 }.getOrNull() ?: return@finding
 
-                stream.use { input -> input.toExternalResource().use { e -> subject.sendImage(e) } }
+                bytes.toExternalResource("png").use { e -> subject.sendImage(e) }
             }
         }
     }
