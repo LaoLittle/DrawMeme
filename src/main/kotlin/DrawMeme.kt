@@ -3,12 +3,13 @@ package org.laolittle.plugin.draw
 import io.ktor.client.*
 import io.ktor.client.engine.okhttp.*
 import io.ktor.client.request.*
-import kotlinx.coroutines.TimeoutCancellationException
+import kotlinx.coroutines.*
 import net.mamoe.mirai.console.plugin.description.PluginDependency
 import net.mamoe.mirai.console.plugin.jvm.JvmPluginDescription
 import net.mamoe.mirai.console.plugin.jvm.KotlinPlugin
 import net.mamoe.mirai.contact.Contact.Companion.sendImage
 import net.mamoe.mirai.contact.nameCardOrNick
+import net.mamoe.mirai.event.EventPriority
 import net.mamoe.mirai.event.globalEventChannel
 import net.mamoe.mirai.event.subscribeGroupMessages
 import net.mamoe.mirai.message.data.At
@@ -43,7 +44,9 @@ object DrawMeme : KotlinPlugin(
     override fun onEnable() {
         logger.info { "Plugin loaded" }
 
-        globalEventChannel().subscribeGroupMessages {
+        globalEventChannel().subscribeGroupMessages(
+            priority = EventPriority.NORMAL
+        ) {
             startsWith("#ph") { str ->
                 val processed = message.firstIsInstanceOrNull<At>()?.let {
                     subject[it.target]?.nameCardOrNick?.let { card -> str.replace("@${it.target}", card) }
@@ -202,7 +205,7 @@ object DrawMeme : KotlinPlugin(
 
                 val topText = TextLine.make(words[0], Fonts["Noto Sans SC", FontStyle.BOLD])
                 val bottomText = TextLine.make(words[1], Fonts["Noto Serif SC", FontStyle.BOLD])
-                val width = maxOf(topText.width + 70, bottomText.width + 250).toInt() + 30
+                val width = maxOf(topText.width + 70, bottomText.width + 250).toInt() + 10
 
                 Surface.makeRasterN32Premul(width, 290).apply {
                     canvas.apply {
@@ -374,7 +377,7 @@ object DrawMeme : KotlinPlugin(
                 }
             }
 
-            finding(Regex("""^([\uD83D\uDD00-\uD83E\uDF00]).*([\uD83D\uDD00-\uD83E\uDF00])""")) {
+            finding(Regex("""^([\ud83c\udd00-\ud83e\udfff]).*([\ud83c\udd00-\ud83e\udfff])""")) {
                 val emojiMix = "https://www.gstatic.com/android/keyboard/emojikitchen"
                 val getEmoji: suspend (Emoji, Emoji) -> ByteArray? = Here@{ main: Emoji, aux: Emoji ->
                     val mainCode = main.code.toString(16)
@@ -403,11 +406,13 @@ object DrawMeme : KotlinPlugin(
                 val first = it.groupValues[1].toEmoji()
                 val second = it.groupValues[2].toEmoji()
 
-                val bytes = kotlin.runCatching {
-                    getEmoji(first, second) ?: getEmoji(second,first)
-                }.getOrNull() ?: return@finding
+                launch {
+                    val bytes = kotlin.runCatching {
+                        getEmoji(first, second) ?: getEmoji(second,first)
+                    }.getOrNull() ?: return@launch
 
-                bytes.toExternalResource("png").use { e -> subject.sendImage(e) }
+                    bytes.toExternalResource("png").use { e -> subject.sendImage(e) }
+                }
             }
         }
     }

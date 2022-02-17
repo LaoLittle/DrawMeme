@@ -5,14 +5,22 @@ import io.ktor.client.engine.okhttp.*
 import io.ktor.client.request.*
 import kotlinx.coroutines.runBlocking
 
-class Emoji(val code: Int) {
+data class Emoji(val code: Int) {
     fun toSurrogates() = code.toChars()
 
     override fun toString() = String(toSurrogates())
 
+    override operator fun equals(other: Any?): Boolean =
+        when (other) {
+            is Emoji -> this.code == other.code
+            else -> false
+        }
+
+    override fun hashCode() = code
+
     companion object EmojiUtil {
         val supportedEmojis by lazy {
-            runBlocking {
+            runBlocking(DrawMeme.coroutineContext) {
                 val emo = mutableMapOf<Int, Long>()
                 val returnStr: String = HttpClient(OkHttp).use {
                     it.get("https://tikolu.net/emojimix/emojis.js?v=2")
