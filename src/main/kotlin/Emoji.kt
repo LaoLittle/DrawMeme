@@ -1,10 +1,5 @@
 package org.laolittle.plugin.draw
 
-import io.ktor.client.*
-import io.ktor.client.engine.okhttp.*
-import io.ktor.client.request.*
-import kotlinx.coroutines.runBlocking
-
 data class Emoji(val code: Int) {
     fun toSurrogates() = code.toChars()
 
@@ -19,24 +14,6 @@ data class Emoji(val code: Int) {
     override fun hashCode() = code
 
     companion object EmojiUtil {
-        val supportedEmojis by lazy {
-            runBlocking(DrawMeme.coroutineContext) {
-                val emo = mutableMapOf<Int, Long>()
-                val returnStr: String = HttpClient(OkHttp).use {
-                    it.get("https://tikolu.net/emojimix/emojis.js?v=2")
-                }
-                val regex = Regex("""\[\[(.+)], "(\d+)"]""")
-                val finds = regex.findAll(returnStr)
-
-                finds.forEach { result ->
-                    result.groupValues[1].split(",").forEach {
-                        emo[it.toInt()] = result.groupValues[2].toLong()
-                    }
-                }
-                emo
-            }
-        }
-
         private const val MIN_LOW_SURROGATE = '\uDC00'
 
         private const val MIN_HIGH_SURROGATE = '\uD800'
@@ -50,7 +27,7 @@ data class Emoji(val code: Int) {
             val emojiCode =
                 ((get(0).code -
                         (MIN_HIGH_SURROGATE.code -
-                        (MIN_SUPPLEMENTARY_CODE_POINT ushr 10))) shl 10) +
+                                (MIN_SUPPLEMENTARY_CODE_POINT ushr 10))) shl 10) +
                         (get(1).code - MIN_LOW_SURROGATE.code)
             return Emoji(emojiCode)
         }
@@ -67,9 +44,8 @@ data class Emoji(val code: Int) {
                 throw IllegalArgumentException(String.format("Not a valid Unicode code point: 0x%X", this))
             }
 
-        private val Int.highSurrogate get() =
-            (ushr(10)
-                    + (MIN_HIGH_SURROGATE.code - (MIN_SUPPLEMENTARY_CODE_POINT ushr 10))).toChar()
+        private val Int.highSurrogate
+            get() = (ushr(10) + (MIN_HIGH_SURROGATE.code - (MIN_SUPPLEMENTARY_CODE_POINT ushr 10))).toChar()
 
         private val Int.lowSurrogate get() = (and(0x3ff) + MIN_LOW_SURROGATE.code).toChar()
     }

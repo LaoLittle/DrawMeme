@@ -378,36 +378,11 @@ object DrawMeme : KotlinPlugin(
             }
 
             finding(Regex("""^([\ud83c\udd00-\ud83e\udfff]).*([\ud83c\udd00-\ud83e\udfff])""")) {
-                val emojiMix = "https://www.gstatic.com/android/keyboard/emojikitchen"
-                val getEmoji: suspend (Emoji, Emoji) -> ByteArray? = Here@{ main: Emoji, aux: Emoji ->
-                    val mainCode = main.code.toString(16)
-                    val auxCode = aux.code.toString(16)
-                    val date = Emoji.supportedEmojis[main.code] ?: return@Here null
-
-                    val fileName = "u${mainCode}_u${auxCode}.png"
-                    val file = emojiMixFolder
-                        .resolve(fileName)
-                    val giaFile = emojiMixFolder.resolve("u${auxCode}_u${mainCode}.png")
-
-                    return@Here kotlin.runCatching {
-                        if (file.isFile) file.readBytes()
-                        else if (giaFile.isFile) giaFile.readBytes()
-                        else HttpClient(OkHttp).use { client ->
-                            client.get<ByteArray>("$emojiMix/$date/u$mainCode/$fileName").also { bytes ->
-                                file.writeBytes(bytes)
-                            }
-                        }
-                    }.getOrNull()
-                }
-
                 val first = it.groupValues[1].toEmoji()
                 val second = it.groupValues[2].toEmoji()
 
                 launch {
-                    val bytes = kotlin.runCatching {
-                        getEmoji(first, second) ?: getEmoji(second,first)
-                    }.getOrNull() ?: return@launch
-
+                    val bytes = getEmojiMix(first, second) ?: getEmojiMix(second, first) ?: return@launch
                     bytes.toExternalResource("png").use { e -> subject.sendImage(e) }
                 }
             }
