@@ -3,7 +3,8 @@ package org.laolittle.plugin.draw
 import io.ktor.client.*
 import io.ktor.client.engine.okhttp.*
 import io.ktor.client.request.*
-import kotlinx.coroutines.*
+import kotlinx.coroutines.TimeoutCancellationException
+import kotlinx.coroutines.launch
 import net.mamoe.mirai.console.plugin.description.PluginDependency
 import net.mamoe.mirai.console.plugin.jvm.JvmPluginDescription
 import net.mamoe.mirai.console.plugin.jvm.KotlinPlugin
@@ -24,7 +25,6 @@ import org.jetbrains.skia.*
 import org.laolittle.plugin.Fonts
 import org.laolittle.plugin.draw.Emoji.EmojiUtil.toEmoji
 import org.laolittle.plugin.toExternalResource
-import java.io.File
 import java.io.InputStream
 import net.mamoe.mirai.message.data.Image as MiraiImage
 
@@ -383,9 +383,6 @@ object DrawMeme : KotlinPlugin(
                     val mainCode = main.code.toString(16)
                     val auxCode = aux.code.toString(16)
                     val date = Emoji.supportedEmojis[main.code] ?: return@Here null
-
-                    val emojiMixFolder = dataFolder.resolve("emojimix")
-                        .also(File::mkdirs)
 
                     val fileName = "u${mainCode}_u${auxCode}.png"
                     val file = emojiMixFolder

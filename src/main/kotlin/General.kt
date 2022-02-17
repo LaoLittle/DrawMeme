@@ -1,5 +1,7 @@
 package org.laolittle.plugin.draw
 
+import java.io.File
+
 internal fun String.split(): List<String>? {
     val words =
         when {
@@ -22,4 +24,9 @@ internal fun String.split(): List<String>? {
         }
     }
     return words
+}
+
+internal val emojiMixFolder by lazy {
+    DrawMeme.dataFolder.resolve("emojimix")
+        .also(File::mkdirs)
 }
