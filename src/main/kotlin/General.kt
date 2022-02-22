@@ -4,6 +4,7 @@ import io.ktor.client.*
 import io.ktor.client.engine.okhttp.*
 import io.ktor.client.request.*
 import kotlinx.coroutines.runBlocking
+import net.mamoe.mirai.utils.info
 import java.io.File
 
 internal fun String.split(): List<String>? {
@@ -36,7 +37,7 @@ internal val emojiMixFolder by lazy {
 }
 
 internal const val emojiMixURL = "https://www.gstatic.com/android/keyboard/emojikitchen"
-internal suspend fun getEmojiMix(main: Emoji, aux: Emoji): ByteArray? {
+internal suspend fun getEmojiMix(main: Emoji, aux: Emoji): File? {
     val mainCode = main.code.toString(16)
     val auxCode = aux.code.toString(16)
     val date = supportedEmojis[main.code] ?: return null
@@ -47,28 +48,33 @@ internal suspend fun getEmojiMix(main: Emoji, aux: Emoji): ByteArray? {
     val giaFile = emojiMixFolder.resolve("u${auxCode}_u${mainCode}.png")
 
     return runCatching {
-        if (file.isFile) file.readBytes()
-        else if (giaFile.isFile) giaFile.readBytes()
+        if (file.isFile) file
+        else if (giaFile.isFile) giaFile
         else HttpClient(OkHttp).use { client ->
             client.get<ByteArray>("$emojiMixURL/$date/u$mainCode/$fileName").also { bytes ->
                 file.writeBytes(bytes)
             }
+            file
         }
     }.onFailure { DrawMeme.logger.error(it) }.getOrNull()
 }
 
-val supportedEmojis by lazy {
+private val supportedEmojis by lazy {
     runBlocking(DrawMeme.coroutineContext) {
+        val logger by DrawMeme::logger
+        logger.info { "开始获取支持的Emoji列表" }
+
         val emo = mutableMapOf<Int, Long>()
         val returnStr: String = HttpClient(OkHttp).use {
-            it.get("https://tikolu.net/emojimix/emojis.js?v=2")
+            it.get("https://tikolu.net/emojimix/emojis.js")
         }
-        val regex = Regex("""\[\[(.+)], "(\d+)"]""")
+
+        val regex = Regex("""\[\[(.+)], "(\d+)"""")
         val finds = regex.findAll(returnStr)
 
         finds.forEach { result ->
             result.groupValues[1].split(",").forEach {
-                emo[it.toInt()] = result.groupValues[2].toLong()
+                emo[it.replace(" ", "").toInt()] = result.groupValues[2].toLong()
             }
         }
         emo

@@ -23,6 +23,7 @@ import net.mamoe.mirai.utils.ExternalResource.Companion.toExternalResource
 import net.mamoe.mirai.utils.info
 import org.jetbrains.skia.*
 import org.laolittle.plugin.Fonts
+import org.laolittle.plugin.draw.Emoji.EmojiUtil.fullEmojiRegex
 import org.laolittle.plugin.draw.Emoji.EmojiUtil.toEmoji
 import org.laolittle.plugin.toExternalResource
 import java.io.InputStream
@@ -377,13 +378,13 @@ object DrawMeme : KotlinPlugin(
                 }
             }
 
-            finding(Regex("""^([\ud83c\udd00-\ud83e\udfff]).*([\ud83c\udd00-\ud83e\udfff])""")) {
+            finding(Regex("""^($fullEmojiRegex).*($fullEmojiRegex)""")) {
                 val first = it.groupValues[1].toEmoji()
                 val second = it.groupValues[2].toEmoji()
 
                 launch {
-                    val bytes = getEmojiMix(first, second) ?: getEmojiMix(second, first) ?: return@launch
-                    bytes.toExternalResource("png").use { e -> subject.sendImage(e) }
+                    val file = getEmojiMix(first, second) ?: getEmojiMix(second, first) ?: return@launch
+                    file.toExternalResource("png").use { e -> subject.sendImage(e) }
                 }
             }
         }
