@@ -4,7 +4,6 @@ import io.ktor.client.*
 import io.ktor.client.engine.okhttp.*
 import io.ktor.client.request.*
 import kotlinx.coroutines.TimeoutCancellationException
-import kotlinx.coroutines.launch
 import net.mamoe.mirai.console.plugin.description.PluginDependency
 import net.mamoe.mirai.console.plugin.jvm.JvmPluginDescription
 import net.mamoe.mirai.console.plugin.jvm.KotlinPlugin
@@ -27,18 +26,19 @@ import org.laolittle.plugin.draw.Emoji.EmojiUtil.fullEmojiRegex
 import org.laolittle.plugin.draw.Emoji.EmojiUtil.toEmoji
 import org.laolittle.plugin.toExternalResource
 import java.io.InputStream
+import kotlin.math.min
 import net.mamoe.mirai.message.data.Image as MiraiImage
 
 object DrawMeme : KotlinPlugin(
     JvmPluginDescription(
         id = "org.laolittle.plugin.draw.DrawMeme",
         name = "DrawMeme",
-        version = "1.0.2",
+        version = "1.0.3",
     ) {
         author("LaoLittle")
 
         dependsOn(
-            PluginDependency("org.laolittle.plugin.SkikoMirai", ">=1.0.1", true)
+            PluginDependency("org.laolittle.plugin.SkikoMirai", ">=1.0.2", true)
         )
     }
 ) {
@@ -111,7 +111,7 @@ object DrawMeme : KotlinPlugin(
                             (((phHeight - rightPorn.height) shr 1) - 2).toFloat()
                         )
                     }
-                    toExternalResource().use { res ->
+                    makeImageSnapshot().toExternalResource().use { res ->
                         subject.sendImage(res)
                     }
                 }
@@ -178,7 +178,7 @@ object DrawMeme : KotlinPlugin(
                             paint.apply { color = Color.WHITE })
                     }
 
-                    toExternalResource().use { res -> subject.sendImage(res) }
+                    makeImageSnapshot().toExternalResource().use { res -> subject.sendImage(res) }
                 }
             }
 
@@ -204,9 +204,9 @@ object DrawMeme : KotlinPlugin(
 
                 val words = processed.split() ?: return@Five
 
-                val topText = TextLine.make(words[0], Fonts["Noto Sans SC", FontStyle.BOLD])
-                val bottomText = TextLine.make(words[1], Fonts["Noto Serif SC", FontStyle.BOLD])
-                val width = maxOf(topText.width + 70, bottomText.width + 250).toInt() + 10
+                val topText = TextLine.make(words[0], Fonts["Noto Sans SC-BOLD"])
+                val bottomText = TextLine.make(words[1], Fonts["Noto Serif SC-BOLD"])
+                val width = maxOf(topText.width + 70, bottomText.width + 250).toInt()
 
                 Surface.makeRasterN32Premul(width, 290).apply {
                     canvas.apply {
@@ -216,7 +216,7 @@ object DrawMeme : KotlinPlugin(
                         val topY = 100F
                         val paintTop = Paint().apply {
                             isAntiAlias = true
-                            setStroke(true)
+                            mode = PaintMode.STROKE
                             strokeCap = PaintStrokeCap.ROUND
                             strokeJoin = PaintStrokeJoin.ROUND
                         }
@@ -374,18 +374,66 @@ object DrawMeme : KotlinPlugin(
                         })
                     }
 
-                    toExternalResource().use { subject.sendImage(it) }
+                    makeImageSnapshot().toExternalResource().use { subject.sendImage(it) }
                 }
             }
 
-            finding(Regex("""^($fullEmojiRegex).*($fullEmojiRegex)""")) {
+            // 零溢事件
+            startsWith("#0") {
+                val image = (message.takeIf { m -> m.contains(MiraiImage) } ?: runCatching {
+                    subject.sendMessage("请在30s内发送图片")
+                    nextMessage(30_000) { event -> event.message.contains(MiraiImage) }
+                }.getOrElse { e ->
+                    when (e) {
+                        is TimeoutCancellationException -> {
+                            subject.sendMessage(PlainText("超时未发送").plus(message.quote()))
+                            return@startsWith
+                        }
+                        else -> throw e
+                    }
+                }).firstIsInstanceOrNull<MiraiImage>()
+                    ?: return@startsWith
+
+                val skikoImage = HttpClient(OkHttp).use { client ->
+                    Image.makeFromEncoded(client.get<ByteArray>(image.queryUrl()))
+                }
+                val w21 = (skikoImage.width shr 1).toFloat()
+                val h21 = (skikoImage.height shr 1).toFloat()
+                val radius = min(w21, h21) * .24f
+
+                val text = TextLine.make("0%", Fonts["MiSans-Regular", radius * .6f])
+                Surface.makeRaster(skikoImage.imageInfo).apply {
+                    val paint = Paint().apply {
+                        isAntiAlias = true
+                    }
+                    canvas.apply {
+                        clear(Color.BLACK)
+                        drawImage(skikoImage, 0F, 0F, paint.apply {
+                            alpha = 155
+                        })
+                        drawCircle(w21, h21, radius, paint.apply {
+                            mode = PaintMode.STROKE
+                            strokeCap = PaintStrokeCap.ROUND
+                            strokeJoin = PaintStrokeJoin.ROUND
+                            strokeWidth = radius * .205f
+                            color = Color.WHITE
+                            maskFilter = MaskFilter.makeBlur(FilterBlurMode.SOLID, radius * .3f)
+                        })
+                        drawTextLine(text, w21 - text.width / 2, h21 + text.height / 4, paint.apply {
+                            mode = PaintMode.FILL
+                        })
+                    }
+
+                    makeImageSnapshot().toExternalResource().use { subject.sendImage(it) }
+                }
+            }
+
+            finding(Regex("""^($fullEmojiRegex).*($fullEmojiRegex)$""")) {
                 val first = it.groupValues[1].toEmoji()
                 val second = it.groupValues[2].toEmoji()
 
-                launch {
-                    val file = getEmojiMix(first, second) ?: getEmojiMix(second, first) ?: return@launch
-                    file.toExternalResource("png").use { e -> subject.sendImage(e) }
-                }
+                val file = getEmojiMix(first, second) ?: getEmojiMix(second, first) ?: return@finding
+                file.toExternalResource("png").use { e -> subject.sendImage(e) }
             }
         }
     }
