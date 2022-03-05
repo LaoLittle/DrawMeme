@@ -405,22 +405,21 @@ object DrawMeme : KotlinPlugin(
                 Surface.makeRaster(skikoImage.imageInfo).apply {
                     val paint = Paint().apply {
                         isAntiAlias = true
+                        color = Color.WHITE
                     }
                     canvas.apply {
                         clear(Color.BLACK)
                         drawImage(skikoImage, 0F, 0F, paint.apply {
-                            alpha = 155
+                            alpha = 160
                         })
                         drawCircle(w21, h21, radius, paint.apply {
                             mode = PaintMode.STROKE
-                            strokeCap = PaintStrokeCap.ROUND
-                            strokeJoin = PaintStrokeJoin.ROUND
-                            strokeWidth = radius * .205f
-                            color = Color.WHITE
-                            maskFilter = MaskFilter.makeBlur(FilterBlurMode.SOLID, radius * .3f)
+                            strokeWidth = radius * .19f
+                            maskFilter = MaskFilter.makeBlur(FilterBlurMode.SOLID, radius * .2f)
                         })
                         drawTextLine(text, w21 - text.width / 2, h21 + text.height / 4, paint.apply {
                             mode = PaintMode.FILL
+                            maskFilter = null
                         })
                     }
 
