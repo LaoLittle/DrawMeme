@@ -156,7 +156,7 @@ object DrawMeme : KotlinPlugin(
                 val foo = h / 6
                 val bar = foo / 1.4f
                 val fontSize = if (bar.toInt() * content.length > w) ((w * 0.8f) / content.length) else bar
-                val text = TextLine.make(content, Fonts["MiSans-Bold.ttf", fontSize])
+                val text = TextLine.make(content, Fonts["MiSans-Bold", fontSize])
 
                 Surface.makeRasterN32Premul(skikoImage.width, h + (foo * 1.4f).toInt()).apply {
                     canvas.apply {
