@@ -13,6 +13,7 @@ repositories {
     mavenCentral()
     maven("https://maven.aliyun.com/repository/central")
     maven("https://maven.pkg.jetbrains.space/public/p/compose/dev")
+    maven("https://jitpack.io")
 }
 
 fun skikoAwt(ver: String) = "org.jetbrains.skiko:skiko-awt-runtime-$ver"
@@ -22,5 +23,6 @@ dependencies {
     implementation(skikoAwt("windows-x64:$skikoVer"))
     implementation(skikoAwt("linux-x64:$skikoVer"))
     implementation(skikoAwt("linux-arm64:$skikoVer"))
-    implementation(fileTree(mapOf("dir" to "libs", "include" to listOf("*.jar"))))
+    implementation(skikoAwt("linux-arm64:$skikoVer"))
+    implementation("com.github.LaoLittle:SkikoMirai:1.0.3")
 }
