@@ -23,6 +23,5 @@ dependencies {
     implementation(skikoAwt("windows-x64:$skikoVer"))
     implementation(skikoAwt("linux-x64:$skikoVer"))
     implementation(skikoAwt("linux-arm64:$skikoVer"))
-    implementation(skikoAwt("linux-arm64:$skikoVer"))
     implementation("com.github.LaoLittle:SkikoMirai:1.0.3")
 }
