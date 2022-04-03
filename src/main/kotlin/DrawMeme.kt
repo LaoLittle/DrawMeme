@@ -3,7 +3,6 @@ package org.laolittle.plugin.draw
 import io.ktor.client.*
 import io.ktor.client.engine.okhttp.*
 import io.ktor.client.request.*
-import kotlinx.coroutines.TimeoutCancellationException
 import net.mamoe.mirai.console.plugin.description.PluginDependency
 import net.mamoe.mirai.console.plugin.jvm.JvmPluginDescription
 import net.mamoe.mirai.console.plugin.jvm.KotlinPlugin
@@ -14,20 +13,18 @@ import net.mamoe.mirai.event.globalEventChannel
 import net.mamoe.mirai.event.subscribeGroupMessages
 import net.mamoe.mirai.message.data.At
 import net.mamoe.mirai.message.data.Image.Key.queryUrl
-import net.mamoe.mirai.message.data.MessageSource.Key.quote
-import net.mamoe.mirai.message.data.PlainText
 import net.mamoe.mirai.message.data.firstIsInstanceOrNull
-import net.mamoe.mirai.message.nextMessage
 import net.mamoe.mirai.utils.ExternalResource.Companion.toExternalResource
 import net.mamoe.mirai.utils.info
 import org.jetbrains.skia.*
 import org.laolittle.plugin.Fonts
 import org.laolittle.plugin.draw.Emoji.EmojiUtil.fullEmojiRegex
 import org.laolittle.plugin.draw.Emoji.EmojiUtil.toEmoji
+import org.laolittle.plugin.draw.meme.pornHub
 import org.laolittle.plugin.toExternalResource
+import org.laolittle.plugin.usedBy
 import java.io.InputStream
 import kotlin.math.min
-import net.mamoe.mirai.message.data.Image as MiraiImage
 
 object DrawMeme : KotlinPlugin(
     JvmPluginDescription(
@@ -38,7 +35,7 @@ object DrawMeme : KotlinPlugin(
         author("LaoLittle")
 
         dependsOn(
-            PluginDependency("org.laolittle.plugin.SkikoMirai", ">=1.0.2", true)
+            PluginDependency("org.laolittle.plugin.SkikoMirai", ">=1.0.3", true)
         )
     }
 ) {
@@ -55,70 +52,14 @@ object DrawMeme : KotlinPlugin(
 
                 val words = processed.split() ?: return@startsWith
 
-                val phHeight = 170
-                val widthPlus = 12
-
-                val leftText = TextLine.make(words[0], MiSansBold88)
-                val leftPorn = Surface.makeRasterN32Premul(leftText.width.toInt() + (widthPlus shl 1), phHeight)
-                val paint = Paint().apply {
-                    isAntiAlias = true
-                }
-
-                leftPorn.canvas.apply {
-                    clear(Color.makeARGB(255, 0, 0, 0))
-                    drawTextLine(
-                        leftText,
-                        (leftPorn.width - leftText.width) / 2 + 5,
-                        ((leftPorn.height shr 1) + (leftText.height / 4)),
-                        paint.apply { color = Color.makeARGB(255, 255, 255, 255) }
-                    )
-                }
-
-                val rightText = TextLine.make(words[1], MiSansBold88)
-                val rightPorn = Surface.makeRasterN32Premul(
-                    rightText.width.toInt() + (widthPlus shl 1) + 20,
-                    rightText.height.toInt()
-                )
-
-                rightPorn.canvas.apply {
-                    val rRect = RRect.makeComplexXYWH(
-                        ((rightPorn.width - rightText.width) / 2) - widthPlus,
-                        0F,
-                        rightText.width + widthPlus,
-                        rightText.height - 1,
-                        floatArrayOf(19.5F)
-                    )
-                    drawRRect(
-                        rRect, paint.apply { color = Color.makeARGB(255, 255, 145, 0) }
-                    )
-                    // clear(Color.makeARGB(255, 255,144,0))
-                    // drawCircle(100F, 100F, 50F, Paint().apply { color = Color.BLUE })
-                    drawTextLine(
-                        rightText,
-                        ((rightPorn.width - rightText.width - widthPlus.toFloat()) / 2),
-                        ((rightPorn.height shr 1) + (rightText.height / 4) + 2),
-                        paint.apply { color = Color.makeARGB(255, 0, 0, 0) }
-                    )
-                }
-
-                Surface.makeRasterN32Premul(leftPorn.width + rightPorn.width, phHeight).apply {
-                    canvas.apply {
-                        clear(Color.makeARGB(255, 0, 0, 0))
-                        drawImage(leftPorn.makeImageSnapshot(), 0F, 0F)
-                        drawImage(
-                            rightPorn.makeImageSnapshot(),
-                            leftPorn.width.toFloat() - (widthPlus shr 1),
-                            (((phHeight - rightPorn.height) shr 1) - 2).toFloat()
-                        )
-                    }
-                    makeImageSnapshot().toExternalResource().use { res ->
-                        subject.sendImage(res)
-                    }
+                pornHub(words[0],words[1]).makeImageSnapshot().toExternalResource().use { res ->
+                    subject.sendImage(res)
                 }
             }
 
             // finding(Regex("[\uD83D\uDE00-\uD83D\uDD67]\\+[\uD83D\uDE00-\uD83D\uDD67]")) {}
 
+            val bwFont = Fonts["MiSans-Bold"] usedBy "黑白图片"
             startsWith("#bw") { str ->
                 val content = str.replace("[图片]", "").replace("[动画表情]", "")
 
@@ -127,19 +68,7 @@ object DrawMeme : KotlinPlugin(
                     return@startsWith
                 }
 
-                val image = (message.takeIf { m -> m.contains(MiraiImage) } ?: runCatching {
-                    subject.sendMessage("请在30s内发送图片")
-                    nextMessage(30_000) { event -> event.message.contains(MiraiImage) }
-                }.getOrElse { e ->
-                    when (e) {
-                        is TimeoutCancellationException -> {
-                            subject.sendMessage(PlainText("超时未发送").plus(message.quote()))
-                            return@startsWith
-                        }
-                        else -> throw e
-                    }
-                }).firstIsInstanceOrNull<MiraiImage>()
-                    ?: return@startsWith
+                val image = getOrWaitImage() ?: return@startsWith
 
                 val paint = Paint().apply {
                     isAntiAlias = true
@@ -156,7 +85,7 @@ object DrawMeme : KotlinPlugin(
                 val foo = h / 6
                 val bar = foo / 1.4f
                 val fontSize = if (bar.toInt() * content.length > w) ((w * 0.8f) / content.length) else bar
-                val text = TextLine.make(content, Fonts["MiSans-Bold", fontSize])
+                val text = TextLine.make(content, bwFont.makeWithSize(fontSize))
 
                 Surface.makeRasterN32Premul(skikoImage.width, h + (foo * 1.4f).toInt()).apply {
                     canvas.apply {
@@ -182,9 +111,13 @@ object DrawMeme : KotlinPlugin(
                 }
             }
 
+
+            val k5topFont = Fonts["Noto Sans SC-BOLD"] usedBy "5k兆顶部文字"
+            val k5botFont = Fonts["Noto Serif SC-BOLD"] usedBy "5k兆底部文字"
             /**
              * [5000choyen](https://github.com/yurafuca/5000choyen)
-             * @author cssxsh
+             * kotlin ver made by @cssxsh
+             * @author yurafuca
              */
             finding(Regex("#5(?:000|k)兆[\\s　]*(.+)")) Five@{ result ->
                 /*val processed = message.firstIsInstanceOrNull<At>()?.let {
@@ -204,8 +137,8 @@ object DrawMeme : KotlinPlugin(
 
                 val words = processed.split() ?: return@Five
 
-                val topText = TextLine.make(words[0], Fonts["Noto Sans SC-BOLD"])
-                val bottomText = TextLine.make(words[1], Fonts["Noto Serif SC-BOLD"])
+                val topText = TextLine.make(words[0], k5topFont)
+                val bottomText = TextLine.make(words[1], k5botFont)
                 val width = maxOf(topText.width + 70, bottomText.width + 250).toInt()
 
                 Surface.makeRasterN32Premul(width, 290).apply {
@@ -379,20 +312,10 @@ object DrawMeme : KotlinPlugin(
             }
 
             // 零溢事件
-            startsWith("#0") {
-                val image = (message.takeIf { m -> m.contains(MiraiImage) } ?: runCatching {
-                    subject.sendMessage("请在30s内发送图片")
-                    nextMessage(30_000) { event -> event.message.contains(MiraiImage) }
-                }.getOrElse { e ->
-                    when (e) {
-                        is TimeoutCancellationException -> {
-                            subject.sendMessage(PlainText("超时未发送").plus(message.quote()))
-                            return@startsWith
-                        }
-                        else -> throw e
-                    }
-                }).firstIsInstanceOrNull<MiraiImage>()
-                    ?: return@startsWith
+            val x0font = Fonts["MiSans-Regular"] usedBy "0%生成器"
+            finding(Regex("""#(\d{1,3})$""")) { r ->
+                if (r.groupValues[1].toInt() > 100) return@finding
+                val image = getOrWaitImage() ?: return@finding
 
                 val skikoImage = HttpClient(OkHttp).use { client ->
                     Image.makeFromEncoded(client.get<ByteArray>(image.queryUrl()))
@@ -401,19 +324,19 @@ object DrawMeme : KotlinPlugin(
                 val h21 = (skikoImage.height shr 1).toFloat()
                 val radius = min(w21, h21) * .24f
 
-                val text = TextLine.make("0%", Fonts["MiSans-Regular", radius * .6f])
+                val text = TextLine.make("${r.groupValues[1]}%", x0font.makeWithSize(radius * .6f))
                 Surface.makeRaster(skikoImage.imageInfo).apply {
                     val paint = Paint().apply {
-                        isAntiAlias = true
                         color = Color.WHITE
                     }
                     canvas.apply {
                         clear(Color.BLACK)
                         drawImage(skikoImage, 0F, 0F, paint.apply {
-                            alpha = 160
+                            alpha = 155
                         })
                         drawCircle(w21, h21, radius, paint.apply {
                             mode = PaintMode.STROKE
+                            alpha = 255
                             strokeWidth = radius * .19f
                             maskFilter = MaskFilter.makeBlur(FilterBlurMode.SOLID, radius * .2f)
                         })

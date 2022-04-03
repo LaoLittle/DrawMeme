@@ -3,7 +3,14 @@ package org.laolittle.plugin.draw
 import io.ktor.client.*
 import io.ktor.client.engine.okhttp.*
 import io.ktor.client.request.*
+import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.runBlocking
+import net.mamoe.mirai.event.events.MessageEvent
+import net.mamoe.mirai.message.data.Image
+import net.mamoe.mirai.message.data.MessageSource.Key.quote
+import net.mamoe.mirai.message.data.PlainText
+import net.mamoe.mirai.message.data.firstIsInstanceOrNull
+import net.mamoe.mirai.message.nextMessage
 import net.mamoe.mirai.utils.info
 import java.io.File
 
@@ -79,4 +86,19 @@ private val supportedEmojis by lazy {
         }
         emo
     }
+}
+
+internal suspend fun MessageEvent.getOrWaitImage(): Image? {
+    return (message.takeIf { m -> m.contains(Image) } ?: runCatching {
+        subject.sendMessage("请在30s内发送图片")
+        nextMessage(30_000) { event -> event.message.contains(Image) }
+    }.getOrElse { e ->
+        when (e) {
+            is TimeoutCancellationException -> {
+                subject.sendMessage(PlainText("超时未发送").plus(message.quote()))
+                return null
+            }
+            else -> throw e
+        }
+    }).firstIsInstanceOrNull<Image>()
 }
