@@ -3,7 +3,6 @@ package org.laolittle.plugin.draw
 import io.ktor.client.*
 import io.ktor.client.engine.okhttp.*
 import io.ktor.client.request.*
-import net.mamoe.mirai.console.plugin.description.PluginDependency
 import net.mamoe.mirai.console.plugin.jvm.JvmPluginDescription
 import net.mamoe.mirai.console.plugin.jvm.KotlinPlugin
 import net.mamoe.mirai.contact.Contact.Companion.sendImage
@@ -21,6 +20,7 @@ import org.laolittle.plugin.Fonts
 import org.laolittle.plugin.draw.Emoji.EmojiUtil.fullEmojiRegex
 import org.laolittle.plugin.draw.Emoji.EmojiUtil.toEmoji
 import org.laolittle.plugin.draw.meme.pornHub
+import org.laolittle.plugin.draw.meme.blackWhite
 import org.laolittle.plugin.toExternalResource
 import org.laolittle.plugin.usedBy
 import java.io.InputStream
@@ -30,17 +30,19 @@ object DrawMeme : KotlinPlugin(
     JvmPluginDescription(
         id = "org.laolittle.plugin.draw.DrawMeme",
         name = "DrawMeme",
-        version = "1.0.3",
+        version = "1.0.4",
     ) {
         author("LaoLittle")
 
-        dependsOn(
-            PluginDependency("org.laolittle.plugin.SkikoMirai", ">=1.0.3", true)
-        )
+        dependsOn("org.laolittle.plugin.SkikoMirai", ">=1.0.3", true)
     }
 ) {
     override fun onEnable() {
         logger.info { "Plugin loaded" }
+
+        val k5topFont = Fonts["Noto Sans SC-BOLD"] usedBy "5k兆顶部文字"
+        val k5botFont = Fonts["Noto Serif SC-BOLD"] usedBy "5k兆底部文字"
+        val x0font = Fonts["MiSans-Regular"] usedBy "0%生成器"
 
         globalEventChannel().subscribeGroupMessages(
             priority = EventPriority.NORMAL
@@ -50,6 +52,9 @@ object DrawMeme : KotlinPlugin(
                     subject[it.target]?.nameCardOrNick?.let { card -> str.replace("@${it.target}", card) }
                 } ?: str
 
+                ClassLoader.getPlatformClassLoader()
+                ClassLoader.getSystemClassLoader()
+
                 val words = processed.split() ?: return@startsWith
 
                 pornHub(words[0],words[1]).makeImageSnapshot().toExternalResource().use { res ->
@@ -58,21 +63,10 @@ object DrawMeme : KotlinPlugin(
             }
 
             // finding(Regex("[\uD83D\uDE00-\uD83D\uDD67]\\+[\uD83D\uDE00-\uD83D\uDD67]")) {}
-
-            val bwFont = Fonts["MiSans-Bold"] usedBy "黑白图片"
             startsWith("#bw") { str ->
                 val content = str.replace("[图片]", "").replace("[动画表情]", "")
 
-                if (content.isBlank()) {
-                    subject.sendMessage("发送#bw 文字 图片来生成")
-                    return@startsWith
-                }
-
                 val image = getOrWaitImage() ?: return@startsWith
-
-                val paint = Paint().apply {
-                    isAntiAlias = true
-                }
 
                 val skikoImage = HttpClient(OkHttp).use { client ->
                     client.get<InputStream>(image.queryUrl()).use { input ->
@@ -80,40 +74,11 @@ object DrawMeme : KotlinPlugin(
                     }
                 }
 
-                val h = skikoImage.height
-                val w = skikoImage.width
-                val foo = h / 6
-                val bar = foo / 1.4f
-                val fontSize = if (bar.toInt() * content.length > w) ((w * 0.8f) / content.length) else bar
-                val text = TextLine.make(content, bwFont.makeWithSize(fontSize))
-
-                Surface.makeRasterN32Premul(skikoImage.width, h + (foo * 1.4f).toInt()).apply {
-                    canvas.apply {
-                        clear(Color.BLACK)
-                        drawImage(skikoImage, 0F, 0F, paint.apply {
-                            colorFilter = ColorFilter.makeMatrix(
-                                ColorMatrix(
-                                    0.33F, 0.38F, 0.29F, 0F, 0F,
-                                    0.33F, 0.38F, 0.29F, 0F, 0F,
-                                    0.33F, 0.38F, 0.29F, 0F, 0F,
-                                    0.33F, 0.38F, 0.29F, 1F, 0F,
-                                )
-                            )
-                        })
-
-                        drawTextLine(text,
-                            ((width - text.width) / 2),
-                            h + ((foo + text.height) / 2),
-                            paint.apply { color = Color.WHITE })
-                    }
-
-                    makeImageSnapshot().toExternalResource().use { res -> subject.sendImage(res) }
+                blackWhite(content, skikoImage).makeImageSnapshot().toExternalResource().use {
+                    subject.sendImage(it)
                 }
             }
 
-
-            val k5topFont = Fonts["Noto Sans SC-BOLD"] usedBy "5k兆顶部文字"
-            val k5botFont = Fonts["Noto Serif SC-BOLD"] usedBy "5k兆底部文字"
             /**
              * [5000choyen](https://github.com/yurafuca/5000choyen)
              * kotlin ver made by @cssxsh
@@ -148,7 +113,6 @@ object DrawMeme : KotlinPlugin(
                         val topX = 70F
                         val topY = 100F
                         val paintTop = Paint().apply {
-                            isAntiAlias = true
                             mode = PaintMode.STROKE
                             strokeCap = PaintStrokeCap.ROUND
                             strokeJoin = PaintStrokeJoin.ROUND
@@ -237,8 +201,7 @@ object DrawMeme : KotlinPlugin(
                         val bottomX = 250F
                         val bottomY = 230F
                         val paint = Paint().apply {
-                            isAntiAlias = true
-                            setStroke(true)
+                            mode = PaintMode.STROKE
                             strokeCap = PaintStrokeCap.ROUND
                             strokeJoin = PaintStrokeJoin.ROUND
                         }
@@ -312,7 +275,6 @@ object DrawMeme : KotlinPlugin(
             }
 
             // 零溢事件
-            val x0font = Fonts["MiSans-Regular"] usedBy "0%生成器"
             finding(Regex("""#(\d{1,3})$""")) { r ->
                 if (r.groupValues[1].toInt() > 100) return@finding
                 val image = getOrWaitImage() ?: return@finding
@@ -335,8 +297,8 @@ object DrawMeme : KotlinPlugin(
                             alpha = 155
                         })
                         drawCircle(w21, h21, radius, paint.apply {
-                            mode = PaintMode.STROKE
                             alpha = 255
+                            mode = PaintMode.STROKE
                             strokeWidth = radius * .19f
                             maskFilter = MaskFilter.makeBlur(FilterBlurMode.SOLID, radius * .2f)
                         })
