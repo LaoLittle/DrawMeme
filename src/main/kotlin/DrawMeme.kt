@@ -19,8 +19,8 @@ import org.jetbrains.skia.*
 import org.laolittle.plugin.Fonts
 import org.laolittle.plugin.draw.Emoji.EmojiUtil.fullEmojiRegex
 import org.laolittle.plugin.draw.Emoji.EmojiUtil.toEmoji
-import org.laolittle.plugin.draw.meme.pornHub
 import org.laolittle.plugin.draw.meme.blackWhite
+import org.laolittle.plugin.draw.meme.pornHub
 import org.laolittle.plugin.toExternalResource
 import org.laolittle.plugin.usedBy
 import java.io.InputStream
@@ -51,9 +51,6 @@ object DrawMeme : KotlinPlugin(
                 val processed = message.firstIsInstanceOrNull<At>()?.let {
                     subject[it.target]?.nameCardOrNick?.let { card -> str.replace("@${it.target}", card) }
                 } ?: str
-
-                ClassLoader.getPlatformClassLoader()
-                ClassLoader.getSystemClassLoader()
 
                 val words = processed.split() ?: return@startsWith
 
