@@ -11,7 +11,9 @@ import net.mamoe.mirai.event.EventPriority
 import net.mamoe.mirai.event.globalEventChannel
 import net.mamoe.mirai.event.subscribeGroupMessages
 import net.mamoe.mirai.message.data.At
+import net.mamoe.mirai.message.data.Image
 import net.mamoe.mirai.message.data.Image.Key.queryUrl
+import net.mamoe.mirai.message.data.content
 import net.mamoe.mirai.message.data.firstIsInstanceOrNull
 import net.mamoe.mirai.utils.ExternalResource.Companion.toExternalResource
 import net.mamoe.mirai.utils.info
@@ -20,21 +22,23 @@ import org.laolittle.plugin.Fonts
 import org.laolittle.plugin.draw.Emoji.EmojiUtil.fullEmojiRegex
 import org.laolittle.plugin.draw.Emoji.EmojiUtil.toEmoji
 import org.laolittle.plugin.draw.meme.blackWhite
+import org.laolittle.plugin.draw.meme.patpat
 import org.laolittle.plugin.draw.meme.pornHub
 import org.laolittle.plugin.toExternalResource
 import org.laolittle.plugin.usedBy
 import java.io.InputStream
 import kotlin.math.min
+import org.jetbrains.skia.Image as SkImage
 
 object DrawMeme : KotlinPlugin(
     JvmPluginDescription(
         id = "org.laolittle.plugin.draw.DrawMeme",
         name = "DrawMeme",
-        version = "1.0.4",
+        version = "1.0.5",
     ) {
         author("LaoLittle")
 
-        dependsOn("org.laolittle.plugin.SkikoMirai", ">=1.0.3", true)
+        dependsOn("org.laolittle.plugin.SkikoMirai", ">=1.0.3", false)
     }
 ) {
     override fun onEnable() {
@@ -43,6 +47,7 @@ object DrawMeme : KotlinPlugin(
         val k5topFont = Fonts["Noto Sans SC-BOLD"] usedBy "5k兆顶部文字"
         val k5botFont = Fonts["Noto Serif SC-BOLD"] usedBy "5k兆底部文字"
         val x0font = Fonts["MiSans-Regular"] usedBy "0%生成器"
+        val patReg = Regex("""^摸+([我爆头]).*""")
 
         globalEventChannel().subscribeGroupMessages(
             priority = EventPriority.NORMAL
@@ -54,7 +59,7 @@ object DrawMeme : KotlinPlugin(
 
                 val words = processed.split() ?: return@startsWith
 
-                pornHub(words[0],words[1]).makeImageSnapshot().toExternalResource().use { res ->
+                pornHub(words[0], words[1]).makeImageSnapshot().toExternalResource().use { res ->
                     subject.sendImage(res)
                 }
             }
@@ -67,7 +72,7 @@ object DrawMeme : KotlinPlugin(
 
                 val skikoImage = HttpClient(OkHttp).use { client ->
                     client.get<InputStream>(image.queryUrl()).use { input ->
-                        Image.makeFromEncoded(input.readBytes())
+                        SkImage.makeFromEncoded(input.readBytes())
                     }
                 }
 
@@ -277,7 +282,7 @@ object DrawMeme : KotlinPlugin(
                 val image = getOrWaitImage() ?: return@finding
 
                 val skikoImage = HttpClient(OkHttp).use { client ->
-                    Image.makeFromEncoded(client.get<ByteArray>(image.queryUrl()))
+                    SkImage.makeFromEncoded(client.get<ByteArray>(image.queryUrl()))
                 }
                 val w21 = (skikoImage.width shr 1).toFloat()
                 val h21 = (skikoImage.height shr 1).toFloat()
@@ -309,6 +314,51 @@ object DrawMeme : KotlinPlugin(
                 }
             }
 
+            finding(patReg) { result ->
+                val foo = result.groupValues[1]
+                var delay = 0.2
+
+                var image: SkImage? = null
+                when (foo) {
+                    "我" -> httpClient.get<ByteArray>(sender.avatarUrl).apply {
+                        image = SkImage.makeFromEncoded(this)
+                    }
+
+                    "爆" -> delay = 0.5
+                }
+
+                for (single in message) {
+                    if (null != image) break
+                    when (single) {
+                        is Image -> httpClient.get<ByteArray>(single.queryUrl()).apply {
+                            image = SkImage.makeFromEncoded(this)
+                        }
+
+
+                        is At -> subject[single.target]?.let {
+                            httpClient.get<ByteArray>(it.avatarUrl).apply {
+                                image = SkImage.makeFromEncoded(this)
+                            }
+                        }
+                    }
+                }
+
+                if (null == image) {
+                    val name = message.content.replace(patReg, "")
+
+                    subject.findUserOrNull(name)?.let {
+                        httpClient.get<ByteArray>(it.avatarUrl).apply {
+                            image = SkImage.makeFromEncoded(this)
+                        }
+                    } ?: kotlin.run {
+                        subject.sendMessage("我不知道你要摸谁")
+                        return@finding
+                    }
+                }
+
+                patpat(image!!, delay).bytes.toExternalResource("GIF").use { subject.sendImage(it) }
+            }
+
             finding(Regex("""^($fullEmojiRegex).*($fullEmojiRegex)$""")) {
                 val first = it.groupValues[1].toEmoji()
                 val second = it.groupValues[2].toEmoji()
@@ -319,3 +369,4 @@ object DrawMeme : KotlinPlugin(
         }
     }
 }
+
