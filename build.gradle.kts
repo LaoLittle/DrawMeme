@@ -1,9 +1,9 @@
 plugins {
-    val kotlinVersion = "1.6.10"
+    val kotlinVersion = "1.6.20"
     kotlin("jvm") version kotlinVersion
     kotlin("plugin.serialization") version kotlinVersion
 
-    id("net.mamoe.mirai-console") version "2.10.0"
+    id("net.mamoe.mirai-console") version "2.10.1"
 }
 
 group = "org.laolittle.plugin.draw"
@@ -16,14 +16,18 @@ repositories {
     maven("https://jitpack.io")
 }
 
-fun skikoAwt(ver: String) = "org.jetbrains.skiko:skiko-awt-runtime-$ver"
-
 dependencies {
-    val skikoVer = "0.7.16"
-    implementation(skikoAwt("windows-x64:$skikoVer"))
-    implementation(skikoAwt("linux-x64:$skikoVer"))
-    implementation(skikoAwt("linux-arm64:$skikoVer"))
-    compileOnly("com.github.LaoLittle:SkikoMirai:1.0.4")
-    testImplementation("com.github.LaoLittle:SkikoMirai:1.0.4")
+    val smVer = "1.0.6"
+    compileOnly("com.github.LaoLittle:SkikoMirai:$smVer")
+    testImplementation("com.github.LaoLittle:SkikoMirai:$smVer")
+    testImplementation("org.jetbrains.skiko:skiko-awt-runtime-windows-x64:0.7.18")
     testImplementation(kotlin("test"))
+}
+
+kotlin {
+    sourceSets.all {
+        languageSettings.apply {
+            languageVersion = "1.7"
+        }
+    }
 }

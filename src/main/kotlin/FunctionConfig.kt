@@ -9,6 +9,8 @@ object FunctionConfig : AutoSavePluginConfig("FunctionConfig") {
         val enable: Boolean = true,
         val groups: MutableSet<Long> = mutableSetOf()
     )
+
+    val configuration by value(hashMapOf<String, Configuration>())
 }
 
-val configuration by FunctionConfig.value(hashMapOf<String, FunctionConfig.Configuration>())
+val configuration by FunctionConfig::configuration
