@@ -20,6 +20,7 @@ import kotlin.math.min
 import org.jetbrains.skia.Image as SkImage
 
 internal val httpClient = HttpClient(OkHttp)
+internal val logger by DrawMeme::logger
 
 internal fun String.split(): List<String>? {
     val words =
@@ -50,7 +51,7 @@ internal val emojiMixFolder by lazy {
         .also(File::mkdirs)
 }
 
-internal const val emojiMixURL = "https://www.gstatic.com/android/keyboard/emojikitchen"
+private const val emojiMixURL = "https://www.gstatic.com/android/keyboard/emojikitchen"
 internal suspend fun getEmojiMix(main: Emoji, aux: Emoji): File? {
     val mainCode = main.code.toString(16)
     val auxCode = aux.code.toString(16)
@@ -71,12 +72,12 @@ internal suspend fun getEmojiMix(main: Emoji, aux: Emoji): File? {
             file
         }
 
-    }.onFailure { DrawMeme.logger.error(it) }.getOrNull()
+    }.onFailure { logger.error(it) }.getOrNull()
 }
 
 private val supportedEmojis by lazy {
     runBlocking(DrawMeme.coroutineContext) {
-        val logger by DrawMeme::logger
+
         logger.info { "开始获取支持的Emoji列表" }
 
         val emo = mutableMapOf<Int, Long>()

@@ -47,7 +47,7 @@ object DrawMeme : KotlinPlugin(
         val k5topFont = Fonts["Noto Sans SC-BOLD"] usedBy "5k兆顶部文字"
         val k5botFont = Fonts["Noto Serif SC-BOLD"] usedBy "5k兆底部文字"
         val x0font = Fonts["MiSans-Regular"] usedBy "0%生成器"
-        val patReg = Regex("""^摸+([我爆头]).*""")
+        val patReg = Regex("""^摸+([我爆头])""")
 
         globalEventChannel().subscribeGroupMessages(
             priority = EventPriority.NORMAL
