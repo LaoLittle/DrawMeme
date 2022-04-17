@@ -23,11 +23,3 @@ dependencies {
     testImplementation("org.jetbrains.skiko:skiko-awt-runtime-windows-x64:0.7.18")
     testImplementation(kotlin("test"))
 }
-
-kotlin {
-    sourceSets.all {
-        languageSettings.apply {
-            languageVersion = "1.7"
-        }
-    }
-}

@@ -38,7 +38,7 @@ object DrawMeme : KotlinPlugin(
     ) {
         author("LaoLittle")
 
-        dependsOn("org.laolittle.plugin.SkikoMirai", ">=1.0.3", false)
+        dependsOn("org.laolittle.plugin.SkikoMirai", ">=1.0.3", true)
     }
 ) {
     override fun onEnable() {
