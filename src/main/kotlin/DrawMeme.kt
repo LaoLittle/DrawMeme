@@ -47,7 +47,7 @@ object DrawMeme : KotlinPlugin(
         val k5topFont = Fonts["Noto Sans SC-BOLD"] usedBy "5k兆顶部文字"
         val k5botFont = Fonts["Noto Serif SC-BOLD"] usedBy "5k兆底部文字"
         val x0font = Fonts["MiSans-Regular"] usedBy "0%生成器"
-        val patReg = Regex("""^摸+([我爆头])""")
+        val patReg = Regex("""^摸+([我爆头])?""")
 
         globalEventChannel().subscribeGroupMessages(
             priority = EventPriority.NORMAL
@@ -278,7 +278,9 @@ object DrawMeme : KotlinPlugin(
 
             // 零溢事件
             finding(Regex("""#(\d{1,3})$""")) { r ->
-                if (r.groupValues[1].toInt() > 100) return@finding
+                val real = r.groupValues[1].toInt()
+
+                if (real > 100) return@finding
                 val image = getOrWaitImage() ?: return@finding
 
                 val skikoImage = HttpClient(OkHttp).use { client ->
@@ -288,7 +290,7 @@ object DrawMeme : KotlinPlugin(
                 val h21 = (skikoImage.height shr 1).toFloat()
                 val radius = min(w21, h21) * .24f
 
-                val text = TextLine.make("${r.groupValues[1]}%", x0font.makeWithSize(radius * .6f))
+                val text = TextLine.make("$real%", x0font.makeWithSize(radius * .6f))
                 Surface.makeRaster(skikoImage.imageInfo).apply {
                     val paint = Paint().apply {
                         color = Color.WHITE
@@ -316,7 +318,7 @@ object DrawMeme : KotlinPlugin(
 
             finding(patReg) { result ->
                 val foo = result.groupValues[1]
-                var delay = 0.2
+                var delay = 0.05
 
                 var image: SkImage? = null
                 when (foo) {
@@ -324,7 +326,7 @@ object DrawMeme : KotlinPlugin(
                         image = SkImage.makeFromEncoded(this)
                     }
 
-                    "爆" -> delay = 0.5
+                    "爆" -> delay = 0.02
                 }
 
                 for (single in message) {
@@ -333,7 +335,6 @@ object DrawMeme : KotlinPlugin(
                         is Image -> httpClient.get<ByteArray>(single.queryUrl()).apply {
                             image = SkImage.makeFromEncoded(this)
                         }
-
 
                         is At -> subject[single.target]?.let {
                             httpClient.get<ByteArray>(it.avatarUrl).apply {

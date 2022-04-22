@@ -13,7 +13,6 @@ import net.mamoe.mirai.message.data.PlainText
 import net.mamoe.mirai.message.data.firstIsInstanceOrNull
 import net.mamoe.mirai.message.nextMessage
 import net.mamoe.mirai.utils.info
-import org.laolittle.plugin.SkikoMirai
 import java.io.File
 import kotlin.math.max
 import kotlin.math.min
@@ -95,7 +94,7 @@ private val supportedEmojis by lazy {
     }
 }
 
-internal fun SkImage.Companion.makeFromResource(name: String) = makeFromEncoded(SkikoMirai::class.java.getResourceAsStream(name)?.readBytes())
+internal fun SkImage.Companion.makeFromResource(name: String) = makeFromEncoded(DrawMeme::class.java.getResourceAsStream(name)?.readBytes() ?: throw IllegalStateException("无法找到资源文件: $name"))
 
 internal suspend fun MessageEvent.getOrWaitImage(): Image? {
     return (message.takeIf { m -> m.contains(Image) } ?: runCatching {
