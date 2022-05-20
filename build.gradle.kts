@@ -3,11 +3,11 @@ plugins {
     kotlin("jvm") version kotlinVersion
     kotlin("plugin.serialization") version kotlinVersion
 
-    id("net.mamoe.mirai-console") version "2.10.1"
+    id("net.mamoe.mirai-console") version "2.10.3"
 }
 
 group = "org.laolittle.plugin.draw"
-version = "1.0.5"
+version = "1.0.8"
 
 repositories {
     mavenCentral()
@@ -17,9 +17,9 @@ repositories {
 }
 
 dependencies {
-    val smVer = "1.0.6"
+    val smVer = "1.0.8"
     compileOnly("com.github.LaoLittle:SkikoMirai:$smVer")
     testImplementation("com.github.LaoLittle:SkikoMirai:$smVer")
-    testImplementation("org.jetbrains.skiko:skiko-awt-runtime-windows-x64:0.7.18")
+    testImplementation("org.jetbrains.skiko:skiko-awt-runtime-linux-x64:0.7.18")
     testImplementation(kotlin("test"))
 }

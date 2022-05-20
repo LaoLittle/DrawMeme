@@ -10,11 +10,8 @@ import net.mamoe.mirai.contact.nameCardOrNick
 import net.mamoe.mirai.event.EventPriority
 import net.mamoe.mirai.event.globalEventChannel
 import net.mamoe.mirai.event.subscribeGroupMessages
-import net.mamoe.mirai.message.data.At
-import net.mamoe.mirai.message.data.Image
+import net.mamoe.mirai.message.data.*
 import net.mamoe.mirai.message.data.Image.Key.queryUrl
-import net.mamoe.mirai.message.data.content
-import net.mamoe.mirai.message.data.firstIsInstanceOrNull
 import net.mamoe.mirai.utils.ExternalResource.Companion.toExternalResource
 import net.mamoe.mirai.utils.info
 import org.jetbrains.skia.*
@@ -26,7 +23,6 @@ import org.laolittle.plugin.draw.meme.patpat
 import org.laolittle.plugin.draw.meme.pornHub
 import org.laolittle.plugin.toExternalResource
 import org.laolittle.plugin.usedBy
-import java.io.InputStream
 import kotlin.math.min
 import org.jetbrains.skia.Image as SkImage
 
@@ -34,11 +30,11 @@ object DrawMeme : KotlinPlugin(
     JvmPluginDescription(
         id = "org.laolittle.plugin.draw.DrawMeme",
         name = "DrawMeme",
-        version = "1.0.5",
+        version = "1.0.8",
     ) {
         author("LaoLittle")
 
-        dependsOn("org.laolittle.plugin.SkikoMirai", ">=1.0.3", true)
+        dependsOn("org.laolittle.plugin.SkikoMirai", ">=1.0.3", false)
     }
 ) {
     override fun onEnable() {
@@ -57,7 +53,7 @@ object DrawMeme : KotlinPlugin(
                     subject[it.target]?.nameCardOrNick?.let { card -> str.replace("@${it.target}", card) }
                 } ?: str
 
-                val words = processed.split() ?: return@startsWith
+                val words = processed.splitSpace() ?: return@startsWith
 
                 pornHub(words[0], words[1]).makeImageSnapshot().toExternalResource().use { res ->
                     subject.sendImage(res)
@@ -66,17 +62,17 @@ object DrawMeme : KotlinPlugin(
 
             // finding(Regex("[\uD83D\uDE00-\uD83D\uDD67]\\+[\uD83D\uDE00-\uD83D\uDD67]")) {}
             startsWith("#bw") { str ->
-                val content = str.replace("[图片]", "").replace("[动画表情]", "")
+                val msg = str.replace("[图片]", "").replace("[动画表情]", "")
+
+                val (content, filter) = msg.split("--")
 
                 val image = getOrWaitImage() ?: return@startsWith
 
-                val skikoImage = HttpClient(OkHttp).use { client ->
-                    client.get<InputStream>(image.queryUrl()).use { input ->
-                        SkImage.makeFromEncoded(input.readBytes())
-                    }
+                val bytes = HttpClient(OkHttp).use { client ->
+                    client.get<ByteArray>(image.queryUrl())
                 }
 
-                blackWhite(content, skikoImage).makeImageSnapshot().toExternalResource().use {
+                blackWhite(content.trim(), bytes, filter).toExternalResource().use {
                     subject.sendImage(it)
                 }
             }
@@ -102,7 +98,7 @@ object DrawMeme : KotlinPlugin(
                     } ?: str
                 }
 
-                val words = processed.split() ?: return@Five
+                val words = processed.splitSpace() ?: return@Five
 
                 val topText = TextLine.make(words[0], k5topFont)
                 val bottomText = TextLine.make(words[1], k5botFont)
@@ -277,7 +273,15 @@ object DrawMeme : KotlinPlugin(
             }
 
             // 零溢事件
-            finding(Regex("""#(\d{1,3})$""")) { r ->
+            finding(Regex("""#(\d{1,3})""")) { r ->
+                if (message
+                        .firstIsInstance<PlainText>()
+                        .content
+                        .trim()
+                        .replace("#", "")
+                        .contains(Regex("""\D"""))
+                ) return@finding
+
                 val real = r.groupValues[1].toInt()
 
                 if (real > 100) return@finding
@@ -322,8 +326,9 @@ object DrawMeme : KotlinPlugin(
 
                 var image: SkImage? = null
                 when (foo) {
-                    "我" -> httpClient.get<ByteArray>(sender.avatarUrl).apply {
-                        image = SkImage.makeFromEncoded(this)
+                    "我" -> {
+                        val bytes = httpClient.get<ByteArray>(sender.avatarUrl)
+                        image = SkImage.makeFromEncoded(bytes)
                     }
 
                     "爆" -> delay = 0.02
