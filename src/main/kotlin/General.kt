@@ -13,6 +13,7 @@ import net.mamoe.mirai.message.data.PlainText
 import net.mamoe.mirai.message.data.firstIsInstanceOrNull
 import net.mamoe.mirai.message.nextMessage
 import net.mamoe.mirai.utils.info
+import org.jetbrains.skia.Rect
 import java.io.File
 import kotlin.math.max
 import kotlin.math.min
@@ -21,7 +22,7 @@ import org.jetbrains.skia.Image as SkImage
 internal val httpClient = HttpClient(OkHttp)
 internal val logger by DrawMeme::logger
 
-internal fun String.split(): List<String>? {
+internal fun String.splitSpace(): List<String>? {
     val words =
         when {
             this.length == 1 -> listOf(this, " ")
@@ -95,6 +96,8 @@ private val supportedEmojis by lazy {
 }
 
 internal fun SkImage.Companion.makeFromResource(name: String) = makeFromEncoded(DrawMeme::class.java.getResourceAsStream(name)?.readBytes() ?: throw IllegalStateException("无法找到资源文件: $name"))
+
+fun Rect.Companion.makeFromImage(image: SkImage) = Rect(0f,0f,image.width.toFloat(), image.height.toFloat())
 
 internal suspend fun MessageEvent.getOrWaitImage(): Image? {
     return (message.takeIf { m -> m.contains(Image) } ?: runCatching {
