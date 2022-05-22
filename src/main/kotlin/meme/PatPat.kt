@@ -11,11 +11,11 @@ private const val width = 320
 private const val height = 320
 suspend fun patpat(image: Image, delay: Double = .05): GifImage {
     return buildGifImage(GifSetting(width, height, 100, true, GifSetting.Repeat.Infinite)) {
-        addFrame(pat(Rect(40f ,40f, 300f, 300f), Point(0f, 0f), image, 0).getBytes(), delay)
-        addFrame(pat(Rect(40f ,70f, 300f, 300f), Point(0f, 0f), image, 1).getBytes(), delay)
-        addFrame(pat(Rect(33f ,105f, 300f, 300f), Point(0f, 0f), image, 2).getBytes(), delay)
-        addFrame(pat(Rect(37f ,90f, 300f, 300f), Point(0f, 0f), image, 3).getBytes(), delay)
-        addFrame(pat(Rect(40f ,65f, 300f, 300f), Point(0f, 0f), image, 4).getBytes(), delay)
+        addFrame(pat(Rect(40f, 40f, 300f, 300f), Point(0f, 0f), image, 0).getBytes(), delay)
+        addFrame(pat(Rect(40f, 70f, 300f, 300f), Point(0f, 0f), image, 1).getBytes(), delay)
+        addFrame(pat(Rect(33f, 105f, 300f, 300f), Point(0f, 0f), image, 2).getBytes(), delay)
+        addFrame(pat(Rect(37f, 90f, 300f, 300f), Point(0f, 0f), image, 3).getBytes(), delay)
+        addFrame(pat(Rect(40f, 65f, 300f, 300f), Point(0f, 0f), image, 4).getBytes(), delay)
     }
 }
 
@@ -25,7 +25,7 @@ private val hands = Array(5) { Image.makeFromResource("/PatPat/img$it.png") }
 
 private const val imgW = width.toFloat()
 private const val imgH = height.toFloat()
- fun pat(imgDst: Rect, handPoint: Point, image: Image, no: Int): Image {
+fun pat(imgDst: Rect, handPoint: Point, image: Image, no: Int): Image {
     val hand = hands[no]
 
     return Surface.makeRasterN32Premul(width, height).apply {

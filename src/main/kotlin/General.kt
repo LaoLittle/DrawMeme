@@ -2,9 +2,7 @@ package org.laolittle.plugin.draw
 
 import io.ktor.client.*
 import io.ktor.client.engine.okhttp.*
-import io.ktor.client.request.*
 import kotlinx.coroutines.TimeoutCancellationException
-import kotlinx.coroutines.runBlocking
 import net.mamoe.mirai.contact.*
 import net.mamoe.mirai.event.events.MessageEvent
 import net.mamoe.mirai.message.data.Image
@@ -12,9 +10,10 @@ import net.mamoe.mirai.message.data.MessageSource.Key.quote
 import net.mamoe.mirai.message.data.PlainText
 import net.mamoe.mirai.message.data.firstIsInstanceOrNull
 import net.mamoe.mirai.message.nextMessage
-import net.mamoe.mirai.utils.info
+import net.mamoe.mirai.utils.ExternalResource.Companion.toExternalResource
 import org.jetbrains.skia.Rect
-import java.io.File
+import java.nio.file.Path
+import kotlin.io.path.readBytes
 import kotlin.math.max
 import kotlin.math.min
 import org.jetbrains.skia.Image as SkImage
@@ -46,58 +45,13 @@ internal fun String.splitSpace(): List<String>? {
     return words
 }
 
-internal val emojiMixFolder by lazy {
-    DrawMeme.dataFolder.resolve("emojimix")
-        .also(File::mkdirs)
-}
+internal fun SkImage.Companion.makeFromResource(name: String) = makeFromEncoded(
+    DrawMeme::class.java.getResourceAsStream(name)?.readBytes() ?: throw IllegalStateException("无法找到资源文件: $name")
+)
 
-private const val emojiMixURL = "https://www.gstatic.com/android/keyboard/emojikitchen"
-internal suspend fun getEmojiMix(main: Emoji, aux: Emoji): File? {
-    val mainCode = main.code.toString(16)
-    val auxCode = aux.code.toString(16)
-    val date = supportedEmojis[main.code] ?: return null
+fun Rect.Companion.makeFromImage(image: SkImage) = Rect(0f, 0f, image.width.toFloat(), image.height.toFloat())
 
-    val fileName = "u${mainCode}_u${auxCode}.png"
-    val file = emojiMixFolder
-        .resolve(fileName)
-    val giaFile = emojiMixFolder.resolve("u${auxCode}_u${mainCode}.png")
-
-    return runCatching {
-        if (file.isFile) file
-        else if (giaFile.isFile) giaFile
-        else {
-            httpClient.get<ByteArray>("$emojiMixURL/$date/u$mainCode/$fileName").also { bytes ->
-                file.writeBytes(bytes)
-            }
-            file
-        }
-
-    }.onFailure { logger.error(it) }.getOrNull()
-}
-
-private val supportedEmojis by lazy {
-    runBlocking(DrawMeme.coroutineContext) {
-
-        logger.info { "开始获取支持的Emoji列表" }
-
-        val emo = mutableMapOf<Int, Long>()
-        val returnStr: String = httpClient.get("https://tikolu.net/emojimix/emojis.js")
-
-        val regex = Regex("""\[\[(.+)], "(\d+)"""")
-        val finds = regex.findAll(returnStr)
-
-        finds.forEach { result ->
-            result.groupValues[1].split(",").forEach {
-                emo[it.replace(" ", "").toInt()] = result.groupValues[2].toLong()
-            }
-        }
-        emo
-    }
-}
-
-internal fun SkImage.Companion.makeFromResource(name: String) = makeFromEncoded(DrawMeme::class.java.getResourceAsStream(name)?.readBytes() ?: throw IllegalStateException("无法找到资源文件: $name"))
-
-fun Rect.Companion.makeFromImage(image: SkImage) = Rect(0f,0f,image.width.toFloat(), image.height.toFloat())
+fun Path.toExternalResource(formatName: String? = null) = readBytes().toExternalResource(formatName)
 
 internal suspend fun MessageEvent.getOrWaitImage(): Image? {
     return (message.takeIf { m -> m.contains(Image) } ?: runCatching {

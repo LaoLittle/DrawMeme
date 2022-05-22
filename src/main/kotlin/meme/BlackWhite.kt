@@ -103,7 +103,11 @@ suspend fun blackWhite(text: String, image: ByteArray, _filter: String): ByteArr
     val bwDraw = fun Surface.(bitmap: Bitmap) {
         canvas.apply {
             clear(Color.TRANSPARENT)
-            drawImage(Image.makeFromBitmap(bitmap), 0f, 0f, if (null == filter) paintDefault else paintWhite.apply { colorFilter = filter })
+            drawImage(
+                Image.makeFromBitmap(bitmap),
+                0f,
+                0f,
+                if (null == filter) paintDefault else paintWhite.apply { colorFilter = filter })
 
             if (!blank) {
                 val bar = foo / 1.4f
@@ -124,10 +128,10 @@ suspend fun blackWhite(text: String, image: ByteArray, _filter: String): ByteArr
         return if (codec.encodedImageFormat == EncodedImageFormat.GIF) {
             val bitmaps = Array(codec.frameCount) {
                 //DrawMeme.async {   // multi-thread will make jvm crash
-                    Bitmap().apply {
-                        allocPixels(codec.imageInfo)
-                        codec.readPixels(this, it)
-                    }
+                Bitmap().apply {
+                    allocPixels(codec.imageInfo)
+                    codec.readPixels(this, it)
+                }
                 //}
             }
 
@@ -146,12 +150,12 @@ suspend fun blackWhite(text: String, image: ByteArray, _filter: String): ByteArr
             }
 
             var current = 0
-                repeat(codec.frameCount) {
-                    surface.bwDraw(bitmaps[it])
+            repeat(codec.frameCount) {
+                surface.bwDraw(bitmaps[it])
 
-                    current += codec.getFrameInfo(it).duration
-                    collector.addFrame(surface.makeImageSnapshot().bytes, it, current / 1000.0)
-                }
+                current += codec.getFrameInfo(it).duration
+                collector.addFrame(surface.makeImageSnapshot().bytes, it, current / 1000.0)
+            }
 
             collector.close()
 

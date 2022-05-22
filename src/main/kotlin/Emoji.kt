@@ -1,7 +1,7 @@
 package org.laolittle.plugin.draw
 
 data class Emoji(val code: Int) {
-    fun toSurrogates() = code.toChars()
+    private fun toSurrogates() = code.toChars()
 
     override fun toString() = String(toSurrogates())
 
