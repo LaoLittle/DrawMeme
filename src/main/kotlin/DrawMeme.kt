@@ -23,6 +23,7 @@ import org.laolittle.plugin.draw.meme.patpat
 import org.laolittle.plugin.draw.meme.pornHub
 import org.laolittle.plugin.toExternalResource
 import org.laolittle.plugin.usedBy
+import java.lang.IndexOutOfBoundsException
 import kotlin.math.min
 import org.jetbrains.skia.Image as SkImage
 
@@ -64,16 +65,21 @@ object DrawMeme : KotlinPlugin(
             startsWith("#bw") { str ->
                 val msg = str.replace("[图片]", "").replace("[动画表情]", "")
 
-                val (content, filter) = msg.split("--")
-
                 val image = getOrWaitImage() ?: return@startsWith
 
                 val bytes = HttpClient(OkHttp).use { client ->
                     client.get<ByteArray>(image.queryUrl())
                 }
 
-                blackWhite(content.trim(), bytes, filter).toExternalResource().use {
-                    subject.sendImage(it)
+                try {
+                    val (content, filter) = msg.split("--")
+                    blackWhite(content.trim(), bytes, filter).toExternalResource().use {
+                        subject.sendImage(it)
+                    }
+                }catch (e: IndexOutOfBoundsException){
+                    blackWhite(msg.trim(), bytes, "").toExternalResource().use {
+                        subject.sendImage(it)
+                    }
                 }
             }
 

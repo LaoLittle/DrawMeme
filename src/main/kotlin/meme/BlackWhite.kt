@@ -41,7 +41,7 @@ internal val customFilter by lazy {
 
                 val arr = FloatArray(20)
 
-                println(matrix)
+//                println(matrix)
 
                 run {
                     matrix.split(",").forEachIndexed { i, str ->
@@ -49,11 +49,11 @@ internal val customFilter by lazy {
                             DrawMeme.logger.error("Parsing filter $name failed: Unknown number $str")
                             return@m
                         }
-                        println(num)
+//                        println(num)
 
                         arr[i] = num
 
-                        println(i)
+//                        println(i)
                         if (i == 19) return@run
                     }
                 }
@@ -71,6 +71,7 @@ internal val customFilter by lazy {
 
     customs
 }
+private val paintFilter = Paint().apply {}
 
 private val paintWhite = Paint().apply {
     color = Color.WHITE
@@ -103,7 +104,7 @@ suspend fun blackWhite(text: String, image: ByteArray, _filter: String): ByteArr
     val bwDraw = fun Surface.(bitmap: Bitmap) {
         canvas.apply {
             clear(Color.TRANSPARENT)
-            drawImage(Image.makeFromBitmap(bitmap), 0f, 0f, if (null == filter) paintDefault else paintWhite.apply { colorFilter = filter })
+            drawImage(Image.makeFromBitmap(bitmap), 0f, 0f, if (null == filter) paintDefault else paintFilter.apply { colorFilter = filter })
 
             if (!blank) {
                 val bar = foo / 1.4f
@@ -114,7 +115,7 @@ suspend fun blackWhite(text: String, image: ByteArray, _filter: String): ByteArr
                     textLine,
                     ((width - textLine.width) / 2),
                     h + ((foo + textLine.height) / 2),
-                    paintWhite
+                    if (filter == null) paintWhite else paintFilter.apply { color=Color.WHITE; colorFilter = filter }
                 )
             }
         }
