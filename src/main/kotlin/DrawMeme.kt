@@ -64,16 +64,17 @@ object DrawMeme : KotlinPlugin(
             startsWith("#bw") { str ->
                 val msg = str.replace("[图片]", "").replace("[动画表情]", "")
 
-                val (content, filter) = msg.split("--")
-
                 val image = getOrWaitImage() ?: return@startsWith
 
                 val bytes = HttpClient(OkHttp).use { client ->
                     client.get<ByteArray>(image.queryUrl())
                 }
 
-                blackWhite(content.trim(), bytes, filter).toExternalResource().use {
-                    subject.sendImage(it)
+                val sp = msg.split("--")
+                val content = sp.first()
+                val filter = msg.getOrElse(1) { "" }
+                    blackWhite(content.trim(), bytes, filter).toExternalResource().use {
+                        subject.sendImage(it)
                 }
             }
 

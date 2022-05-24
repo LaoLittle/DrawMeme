@@ -41,19 +41,15 @@ internal val customFilter by lazy {
 
                 val arr = FloatArray(20)
 
-                println(matrix)
-
                 run {
                     matrix.split(",").forEachIndexed { i, str ->
                         val num = str.toFloatOrNull() ?: run {
                             DrawMeme.logger.error("Parsing filter $name failed: Unknown number $str")
                             return@m
                         }
-                        println(num)
 
                         arr[i] = num
 
-                        println(i)
                         if (i == 19) return@run
                     }
                 }
@@ -71,13 +67,7 @@ internal val customFilter by lazy {
 
     customs
 }
-
-private val paintWhite = Paint().apply {
-    color = Color.WHITE
-}
-
-private val paintDefault = Paint().apply {
-    colorFilter = ColorFilter.makeMatrix(
+private val defaultFilter = ColorFilter.makeMatrix(
         ColorMatrix(
             0.33F, 0.38F, 0.29F, 0F, 0F,
             0.33F, 0.38F, 0.29F, 0F, 0F,
@@ -85,6 +75,11 @@ private val paintDefault = Paint().apply {
             0.33F, 0.38F, 0.29F, 1F, 0F,
         )
     )
+
+private val paintFilter = Paint()
+
+private val paintWhite = Paint().apply {
+    color = Color.WHITE
 }
 
 private val blackPaint = Paint().apply { color = Color.BLACK }
@@ -92,6 +87,7 @@ suspend fun blackWhite(text: String, image: ByteArray, _filter: String): ByteArr
     val codec = Codec.makeFromData(Data.makeFromBytes(image))
 
     val filter = customFilter[_filter]
+    paintFilter.colorFilter = if (null == filter) defaultFilter else filter
 
     val h = codec.height
     val w = codec.width
@@ -103,7 +99,7 @@ suspend fun blackWhite(text: String, image: ByteArray, _filter: String): ByteArr
     val bwDraw = fun Surface.(bitmap: Bitmap) {
         canvas.apply {
             clear(Color.TRANSPARENT)
-            drawImage(Image.makeFromBitmap(bitmap), 0f, 0f, if (null == filter) paintDefault else paintWhite.apply { colorFilter = filter })
+            drawImage(Image.makeFromBitmap(bitmap), 0f, 0f, paintFilter)
 
             if (!blank) {
                 val bar = foo / 1.4f
