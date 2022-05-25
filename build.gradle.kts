@@ -1,5 +1,5 @@
 plugins {
-    val kotlinVersion = "1.6.20"
+    val kotlinVersion = "1.6.21"
     kotlin("jvm") version kotlinVersion
     kotlin("plugin.serialization") version kotlinVersion
 
@@ -7,7 +7,7 @@ plugins {
 }
 
 group = "org.laolittle.plugin.draw"
-version = "1.0.8"
+version = "1.1.0"
 
 repositories {
     mavenCentral()

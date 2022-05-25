@@ -72,7 +72,7 @@ object DrawMeme : KotlinPlugin(
 
                 val sp = msg.split("--")
                 val content = sp.first()
-                val filter = msg.getOrElse(1) { "" }
+                val filter = sp.getOrElse(1) { "" }
                     blackWhite(content.trim(), bytes, filter).toExternalResource().use {
                         subject.sendImage(it)
                 }
