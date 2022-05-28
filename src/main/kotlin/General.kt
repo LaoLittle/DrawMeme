@@ -10,8 +10,7 @@ import net.mamoe.mirai.message.data.PlainText
 import net.mamoe.mirai.message.data.firstIsInstanceOrNull
 import net.mamoe.mirai.message.nextMessage
 import net.mamoe.mirai.utils.ExternalResource.Companion.toExternalResource
-import org.jetbrains.skia.Bitmap
-import org.jetbrains.skia.Rect
+import org.jetbrains.skia.*
 import java.nio.file.Path
 import kotlin.io.path.readBytes
 import org.jetbrains.skia.Image as SkImage
@@ -67,3 +66,23 @@ internal suspend fun MessageEvent.getOrWaitImage(): Image? {
 }
 
 fun Bitmap.asImage() = org.jetbrains.skia.Image.makeFromBitmap(this)
+
+private val linearMipmap = FilterMipmap(FilterMode.LINEAR, MipmapMode.NEAREST)
+fun Canvas.drawImageRectLinear(
+    image: org.jetbrains.skia.Image,
+    src: Rect,
+    dst: Rect,
+    paint: Paint?,
+    strict: Boolean
+) = drawImageRect(image, src, dst, linearMipmap, paint, strict)
+
+fun Canvas.drawImageRectLinear(image: org.jetbrains.skia.Image, dst: Rect, paint: Paint?) =
+    drawImageRectLinear(
+        image,
+        Rect.makeWH(image.width.toFloat(), image.height.toFloat()),
+        dst,
+        paint,
+        true
+    )
+
+fun Canvas.drawImageRectLinear(image: org.jetbrains.skia.Image, dst: Rect) = drawImageRectLinear(image, dst, null)

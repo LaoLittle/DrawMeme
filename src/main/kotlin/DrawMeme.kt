@@ -16,6 +16,7 @@ import net.mamoe.mirai.utils.ExternalResource.Companion.toExternalResource
 import net.mamoe.mirai.utils.info
 import org.laolittle.plugin.draw.Emoji.EmojiUtil.fullEmojiRegex
 import org.laolittle.plugin.draw.Emoji.EmojiUtil.toEmoji
+import org.laolittle.plugin.draw.custom.initCustomMemes
 import org.laolittle.plugin.draw.meme.*
 import org.laolittle.plugin.sendImage
 import org.laolittle.plugin.toExternalResource
@@ -35,6 +36,7 @@ object DrawMeme : KotlinPlugin(
     override fun onEnable() {
         logger.info { "Plugin loaded" }
 
+        initCustomMemes()
 
         val patReg = Regex("""^摸+([我爆头])?""")
         val choReg = Regex("#5(?:000|k)兆[\\s　]*(.+)")
