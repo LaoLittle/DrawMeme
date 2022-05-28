@@ -1,6 +1,7 @@
 package org.laolittle.plugin.draw.meme
 
 import io.ktor.client.request.*
+import io.ktor.network.sockets.*
 import kotlinx.coroutines.runBlocking
 import net.mamoe.mirai.utils.info
 import org.laolittle.plugin.draw.DrawMeme
@@ -8,6 +9,7 @@ import org.laolittle.plugin.draw.Emoji
 import org.laolittle.plugin.draw.httpClient
 import org.laolittle.plugin.draw.logger
 import java.io.File
+import kotlin.collections.set
 
 internal val emojiMixFolder by lazy {
     DrawMeme.dataFolder.resolve("emojimix")
@@ -35,7 +37,13 @@ internal suspend fun getEmojiMix(main: Emoji, aux: Emoji): File? {
             file
         }
 
-    }.onFailure { logger.error(it) }.getOrNull()
+    }.onFailure {
+        when(it) {
+            is SocketTimeoutException -> logger.error("${it.message} 获取图片失败，可能是没有这张EmojiMix图片: $main $aux")
+            is ConnectTimeoutException -> logger.error("${it.message} EmojiMix连接失败，请检查你的网络")
+            else -> logger.error(it)
+        }
+    }.getOrNull()
 }
 
 private val supportedEmojis by lazy {
