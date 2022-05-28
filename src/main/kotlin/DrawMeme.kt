@@ -18,9 +18,7 @@ import org.jetbrains.skia.*
 import org.laolittle.plugin.Fonts
 import org.laolittle.plugin.draw.Emoji.EmojiUtil.fullEmojiRegex
 import org.laolittle.plugin.draw.Emoji.EmojiUtil.toEmoji
-import org.laolittle.plugin.draw.meme.blackWhite
-import org.laolittle.plugin.draw.meme.patpat
-import org.laolittle.plugin.draw.meme.pornHub
+import org.laolittle.plugin.draw.meme.*
 import org.laolittle.plugin.toExternalResource
 import org.laolittle.plugin.usedBy
 import kotlin.math.min
@@ -366,7 +364,62 @@ object DrawMeme : KotlinPlugin(
                 patpat(image!!, delay).bytes.toExternalResource("GIF").use { subject.sendImage(it) }
             }
 
-            finding(Regex("""^($fullEmojiRegex).*($fullEmojiRegex)$""")) {
+            /*startsWith("#ctl") {
+                val forward = nextMessageOrNull(30_000) {
+                    message.contains(ForwardMessage)
+                }?.firstIsInstanceOrNull<ForwardMessage>() ?: return@startsWith
+
+                var hito = mutableSetOf<Long>()
+                val nick = forward.title.contains("群聊")
+
+                val image = MessageImage()
+                forward.nodeList.forEach { node ->
+                    val messages = arrayListOf<Message>()
+                    if (!hito.add(node.senderId)) {
+                        // subject.sendMessage("人数过多")
+                    }
+                    node.messageChain.forEach {
+                        when (it) {
+                            is PlainText -> messages.add(
+                                Message.Plain(
+                                    ParagraphBuilder(
+                                        paraStyle,
+                                        GlobalParagraphMgr.fc
+                                    ).apply {
+                                        addText(it.content.replace("\\n", "\n"))
+                                    }.build().layout(850f)
+                                )
+                            )
+                            is Image -> messages.add(Message.Image(SkImage.makeFromEncoded(httpClient.get(it.queryUrl()))))
+                        }
+                    }
+
+                    val imageNode = MessageImageNode(
+                        if (nick) node.senderName else null,
+                        "http://q1.qlogo.cn/g?b=qq&nk=${node.senderId}&s=640",
+                        messages
+                    )
+                    image.add(imageNode)
+                }
+
+                subject.sendImage(image.makeImage())
+            }*/
+
+            finding(Regex("""^#erode ?(\d*) ?(\d*)""")) {
+                val image = getOrWaitImage() ?: return@finding
+
+                val rx = it.groupValues[1].toFloatOrNull() ?: 5f
+
+                val ry = it.groupValues[2].toFloatOrNull() ?: 0f
+
+                val sk = httpClient.get<ByteArray>(image.queryUrl())
+
+                erode(sk, rx, ry).toExternalResource().use { ex ->
+                    subject.sendImage(ex)
+                }
+            }
+
+            finding(Regex("""^($fullEmojiRegex) *($fullEmojiRegex)$""")) {
                 val first = it.groupValues[1].toEmoji()
                 val second = it.groupValues[2].toEmoji()
 
