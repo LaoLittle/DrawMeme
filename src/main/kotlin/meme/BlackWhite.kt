@@ -86,8 +86,7 @@ private val blackPaint = Paint().apply { color = Color.BLACK }
 suspend fun blackWhite(text: String, image: ByteArray, _filter: String): ByteArray {
     val codec = Codec.makeFromData(Data.makeFromBytes(image))
 
-    val filter = customFilter[_filter]
-    paintFilter.colorFilter = if (null == filter) defaultFilter else filter
+    paintFilter.colorFilter = customFilter[_filter] ?: defaultFilter
 
     val h = codec.height
     val w = codec.width
@@ -120,10 +119,10 @@ suspend fun blackWhite(text: String, image: ByteArray, _filter: String): ByteArr
         return if (codec.encodedImageFormat == EncodedImageFormat.GIF) {
             val bitmaps = Array(codec.frameCount) {
                 //DrawMeme.async {   // multi-thread will make jvm crash
-                    Bitmap().apply {
-                        allocPixels(codec.imageInfo)
-                        codec.readPixels(this, it)
-                    }
+                Bitmap().apply {
+                    allocPixels(codec.imageInfo)
+                    codec.readPixels(this, it)
+                }
                 //}
             }
 
@@ -142,12 +141,12 @@ suspend fun blackWhite(text: String, image: ByteArray, _filter: String): ByteArr
             }
 
             var current = 0
-                repeat(codec.frameCount) {
-                    surface.bwDraw(bitmaps[it])
+            repeat(codec.frameCount) {
+                surface.bwDraw(bitmaps[it])
 
-                    current += codec.getFrameInfo(it).duration
-                    collector.addFrame(surface.makeImageSnapshot().bytes, it, current / 1000.0)
-                }
+                current += codec.getFrameInfo(it).duration
+                collector.addFrame(surface.makeImageSnapshot().bytes, it, current / 1000.0)
+            }
 
             collector.close()
 
