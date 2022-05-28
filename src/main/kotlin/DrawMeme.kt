@@ -104,6 +104,13 @@ object DrawMeme : KotlinPlugin(
 
             // 零溢事件
             finding(zeroReg) { r ->
+                if (message.firstIsInstance<PlainText>()
+                        .content
+                        .trim()
+                        .replace("#", "")
+                        .contains(Regex("""\D"""))
+                ) return@finding // avoid #\dxxx
+
                 val real = r.groupValues[1].toInt()
 
                 if (real > 100) return@finding
