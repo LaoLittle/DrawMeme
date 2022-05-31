@@ -2,9 +2,11 @@ package org.laolittle.plugin.draw
 
 import io.ktor.client.*
 import io.ktor.client.engine.okhttp.*
+import io.ktor.client.request.*
 import kotlinx.coroutines.TimeoutCancellationException
 import net.mamoe.mirai.event.events.MessageEvent
 import net.mamoe.mirai.message.data.Image
+import net.mamoe.mirai.message.data.Image.Key.queryUrl
 import net.mamoe.mirai.message.data.MessageSource.Key.quote
 import net.mamoe.mirai.message.data.PlainText
 import net.mamoe.mirai.message.data.firstIsInstanceOrNull
@@ -65,7 +67,7 @@ internal suspend fun MessageEvent.getOrWaitImage(): Image? {
     }).firstIsInstanceOrNull<Image>()
 }
 
-fun Bitmap.asImage() = org.jetbrains.skia.Image.makeFromBitmap(this)
+fun Bitmap.asImage() = SkImage.makeFromBitmap(this)
 
 private val linearMipmap = FilterMipmap(FilterMode.LINEAR, MipmapMode.NEAREST)
 fun Canvas.drawImageRectLinear(
@@ -76,7 +78,7 @@ fun Canvas.drawImageRectLinear(
     strict: Boolean
 ) = drawImageRect(image, src, dst, linearMipmap, paint, strict)
 
-fun Canvas.drawImageRectLinear(image: org.jetbrains.skia.Image, dst: Rect, paint: Paint?) =
+fun Canvas.drawImageRectLinear(image: SkImage, dst: Rect, paint: Paint?) =
     drawImageRectLinear(
         image,
         Rect.makeWH(image.width.toFloat(), image.height.toFloat()),
@@ -85,4 +87,6 @@ fun Canvas.drawImageRectLinear(image: org.jetbrains.skia.Image, dst: Rect, paint
         true
     )
 
-fun Canvas.drawImageRectLinear(image: org.jetbrains.skia.Image, dst: Rect) = drawImageRectLinear(image, dst, null)
+fun Canvas.drawImageRectLinear(image: SkImage, dst: Rect) = drawImageRectLinear(image, dst, null)
+
+suspend fun Image.getBytes(): ByteArray = httpClient.get(queryUrl())

@@ -10,6 +10,7 @@ import org.laolittle.plugin.gif.GifSetting
 import java.io.File
 
 private val paintDefault = Paint()
+
 class CustomMeme(
     val name: String,
     val input: Codec,
@@ -110,20 +111,20 @@ class CustomMeme(
                         val bar = line.indexOf('}')
                         val path = line.slice(foo + 1 until bar)
 
-                        input = Codec.makeFromData(Data.makeFromFileName(file.absoluteFile.parentFile.resolve(path).absolutePath))
+                        input =
+                            Codec.makeFromData(Data.makeFromFileName(file.absoluteFile.parentFile.resolve(path).absolutePath))
                     }
 
                     avatarVal.isEmpty() && line.startsWith("avatars:") -> {
                         val foo = line
                             .replace(" ", "")
 
-
                         foo.slice(8..foo.lastIndex)
                             .split(',')
                             .forEachIndexed { index, s ->
-                            if (!s.startsWith('@')) throw IllegalArgumentException("")
-                            avatarVal[s.slice(1..s.lastIndex)] = index
-                        }
+                                if (!s.startsWith('@')) throw IllegalArgumentException("Illegal argument symbol")
+                                avatarVal[s.slice(1..s.lastIndex)] = index
+                            }
                     }
                 }
             }
@@ -138,7 +139,8 @@ class CustomMeme(
 
                 return when (split.first()) {
                     "draw" -> {
-                        val index = avatarVal[split[1]] ?: throw IllegalArgumentException("Compiler error: No such argument: ${split[1]}")
+                        val index = avatarVal[split[1]]
+                            ?: throw IllegalArgumentException("Compiler error: No such argument: ${split[1]}")
 
                         val shape = split[2]
 
@@ -167,7 +169,10 @@ class CustomMeme(
                                     val img = it[index]
 
                                     // drawCircle(x, y, radius, paintTransparent) // 扫清障碍
-                                    clipRRect(RRect.makeLTRB(x - radius, y - radius, x + radius, y + radius, radius), true)
+                                    clipRRect(
+                                        RRect.makeLTRB(x - radius, y - radius, x + radius, y + radius, radius),
+                                        true
+                                    )
                                     drawImageRectLinear(
                                         img,
                                         Rect(x - radius, y - radius, x + radius, y + radius),

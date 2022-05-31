@@ -20,13 +20,12 @@ internal val customMemes = mutableListOf<CustomMeme>()
 
 internal fun initCustomMemes() {
     customMemeFolder.listFiles()?.forEach {
-        customMemes.add(CustomMeme.fromFile(it))
+        if (it.isFile) customMemes.add(CustomMeme.fromFile(it))
     }
 
     drawMemeEventChannel.subscribeGroupMessages {
         customMemes.forEach { meme ->
-            val s = "#${meme.name}"
-            startsWith(s) {
+            startsWith("#${meme.name}") {
                 val avatars = arrayListOf<Deferred<Image>>()
                 message.forEach { m ->
                    if (m is At) {

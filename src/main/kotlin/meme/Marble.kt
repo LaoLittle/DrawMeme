@@ -12,14 +12,14 @@ import kotlin.math.sin
 
 fun marble(image: Image, marble: MarbleFilter = MarbleFilter()): Bitmap {
     //val surface = Surface.makeRaster(image.imageInfo)
-    val bitmap = Bitmap.makeFromImage(image)
+    val src = Bitmap.makeFromImage(image)
 
     val dst = Bitmap().apply {
         allocPixels(image.imageInfo)
     }
 
-    val h = bitmap.height
-    val w = bitmap.width
+    val h = src.height
+    val w = src.width
 
     val h1 = h - 1
     val w1 = w - 1
@@ -34,34 +34,24 @@ fun marble(image: Image, marble: MarbleFilter = MarbleFilter()): Bitmap {
         val xWeight = out[0] - srcX
         val yWeight = out[1] - srcY
 
-        val nw: Int
-        val ne: Int
-        val sw: Int
-        val se: Int
-
-        if (srcX in 0 until w1 && srcY in 0 until h1) {
-            nw = bitmap.getColor(srcX, srcY)
-            ne = bitmap.getColor(srcX + 1, srcY)
-            sw = bitmap.getColor(srcX, srcY + 1)
-            se = bitmap.getColor(srcX + 1, srcY + 1)
-        } else {
-            nw = bitmap.pixel(srcX, srcY, w, h)
-            ne = bitmap.pixel(srcX + 1, srcY, w, h)
-            sw = bitmap.pixel(srcX, srcY + 1, w, h)
-            se = bitmap.pixel(srcX + 1, srcY + 1, w, h)
-        }
+        val nw = src.pixel(srcX, srcY, w1, h1)
+        val ne = src.pixel(srcX + 1, srcY, w1, h1)
+        val sw = src.pixel(srcX, srcY + 1, w1, h1)
+        val se = src.pixel(srcX + 1, srcY + 1, w1, h1)
 
         val pixel = bilinearInterpolate(xWeight, yWeight, nw, ne, sw, se)
 
         dst.erase(pixel, IRect.makeXYWH(x, y, 1, 1))
     }
 
+    src.close()
+
     return dst
 }
 
-private fun Bitmap.pixel(x: Int, y: Int, w: Int, h: Int): Int {
-    val clampX = x.coerceAtLeast(0).coerceAtMost(w - 1)
-    val clampY = y.coerceAtLeast(0).coerceAtMost(h - 1)
+private fun Bitmap.pixel(x: Int, y: Int, w1: Int, h1: Int): Int {
+    val clampX = x.coerceIn(0, w1)
+    val clampY = y.coerceIn(0, h1)
 
     return getColor(clampX, clampY)
 }
@@ -95,6 +85,6 @@ class MarbleFilter(
     }
 
     companion object {
-        fun clamp(value: Int) = value.coerceAtLeast(0).coerceAtMost(255)
+        fun clamp(value: Int) = value.coerceIn(0, 255)
     }
 }

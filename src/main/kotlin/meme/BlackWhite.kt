@@ -97,7 +97,7 @@ suspend fun blackWhite(text: String, image: ByteArray, _filter: String): ByteArr
 
     val bwDraw = fun Surface.(bitmap: Bitmap) {
         canvas.apply {
-            clear(Color.TRANSPARENT)
+            clear(0)
             drawImage(Image.makeFromBitmap(bitmap), 0f, 0f, paintFilter)
 
             if (!blank) {
@@ -149,6 +149,7 @@ suspend fun blackWhite(text: String, image: ByteArray, _filter: String): ByteArr
             }
 
             collector.close()
+            bitmaps.forEach(Bitmap::close)
 
             result.await()
         } else {

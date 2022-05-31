@@ -26,7 +26,7 @@ object DrawMeme : KotlinPlugin(
     JvmPluginDescription(
         id = "org.laolittle.plugin.draw.DrawMeme",
         name = "DrawMeme",
-        version = "1.1.1",
+        version = "1.2.1",
     ) {
         author("LaoLittle")
 
@@ -223,6 +223,28 @@ object DrawMeme : KotlinPlugin(
                 erode(sk, rx, ry).toExternalResource().use { ex ->
                     subject.sendImage(ex)
                 }
+            }
+
+            startsWith("#flash") {
+                val image = getOrWaitImage() ?: return@startsWith
+
+                subject.sendImage(flashImage(image.getBytes()))
+            }
+
+            startsWith("#marble") {
+                val skImage = SkImage.makeFromEncoded((getOrWaitImage() ?: return@startsWith).getBytes())
+
+                val s = it.split(' ')
+                fun getFloatOrNull(index: Int): Float? {
+                    return s.getOrNull(index)?.toFloatOrNull()
+                }
+
+                val foo = skImage.width / 10
+                val x = getFloatOrNull(0) ?: foo.toFloat()
+                val y = getFloatOrNull(1) ?: (foo / 10).toFloat()
+                val i = getFloatOrNull(2) ?: 1f
+
+                subject.sendImage(marble(skImage, MarbleFilter(x,y,i)).use { bitmap -> SkImage.makeFromBitmap(bitmap) })
             }
 
             finding(emojiReg) {
