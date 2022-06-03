@@ -43,6 +43,7 @@ object DrawMeme : KotlinPlugin(
         val zeroReg = Regex("""#(\d{1,3})""")
         val erodeReg = Regex("""^#erode ?(\d*) ?(\d*)""")
         val emojiReg = Regex("""^($fullEmojiRegex) *($fullEmojiRegex)$""")
+        val osuReg = Regex("""^#osu (.+)""")
 
         globalEventChannel().subscribeGroupMessages(
             priority = EventPriority.NORMAL
@@ -253,6 +254,10 @@ object DrawMeme : KotlinPlugin(
 
                 val file = getEmojiMix(first, second) ?: getEmojiMix(second, first) ?: return@finding
                 file.toExternalResource("png").use { e -> subject.sendImage(e) }
+            }
+
+            finding(osuReg) {
+                osu(it.groupValues[1]).toExternalResource().use { e -> subject.sendImage(e) }
             }
         }
     }
