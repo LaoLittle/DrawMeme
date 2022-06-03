@@ -1,8 +1,8 @@
 package org.laolittle.plugin.draw.math
 
-import java.util.*
 import kotlin.math.abs
 import kotlin.math.sqrt
+import kotlin.random.Random
 
 
 /**
@@ -21,7 +21,7 @@ object Noise {
         return noise3(x, y, z)
     }
 
-    private val randomGenerator = Random()
+    private val randomGenerator = Random
 
     /**
      * Compute turbulence using Perlin noise.

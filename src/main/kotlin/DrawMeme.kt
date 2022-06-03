@@ -1,7 +1,5 @@
 package org.laolittle.plugin.draw
 
-import io.ktor.client.*
-import io.ktor.client.engine.okhttp.*
 import io.ktor.client.request.*
 import net.mamoe.mirai.console.plugin.jvm.JvmPluginDescription
 import net.mamoe.mirai.console.plugin.jvm.KotlinPlugin
@@ -26,7 +24,7 @@ object DrawMeme : KotlinPlugin(
     JvmPluginDescription(
         id = "org.laolittle.plugin.draw.DrawMeme",
         name = "DrawMeme",
-        version = "1.2.1",
+        version = "1.2.2",
     ) {
         author("LaoLittle")
 
@@ -43,7 +41,7 @@ object DrawMeme : KotlinPlugin(
         val zeroReg = Regex("""#(\d{1,3})""")
         val erodeReg = Regex("""^#erode ?(\d*) ?(\d*)""")
         val emojiReg = Regex("""^($fullEmojiRegex) *($fullEmojiRegex)$""")
-        val osuReg = Regex("""^#osu (.*)""")
+        val osuReg = Regex("""^#osu ?(.*)""")
 
         globalEventChannel().subscribeGroupMessages(
             priority = EventPriority.NORMAL
@@ -66,14 +64,10 @@ object DrawMeme : KotlinPlugin(
 
                 val image = getOrWaitImage() ?: return@startsWith
 
-                val bytes = HttpClient(OkHttp).use { client ->
-                    client.get<ByteArray>(image.queryUrl())
-                }
-
                 val sp = msg.split("--")
                 val content = sp.first()
                 val filter = sp.getOrElse(1) { "" }
-                    blackWhite(content.trim(), bytes, filter).toExternalResource().use {
+                    blackWhite(content.trim(), image, filter).toExternalResource().use {
                         subject.sendImage(it)
                 }
             }
@@ -118,10 +112,7 @@ object DrawMeme : KotlinPlugin(
 
                 if (real > 100) return@finding
                 val image = getOrWaitImage() ?: return@finding
-
-                val skikoImage = HttpClient(OkHttp).use { client ->
-                    SkImage.makeFromEncoded(client.get<ByteArray>(image.queryUrl()))
-                }
+                val skikoImage = SkImage.makeFromEncoded(image)
 
                 subject.sendImage(zero(skikoImage, real))
             }
@@ -219,9 +210,7 @@ object DrawMeme : KotlinPlugin(
 
                 val ry = it.groupValues[2].toFloatOrNull() ?: 0f
 
-                val sk = httpClient.get<ByteArray>(image.queryUrl())
-
-                erode(sk, rx, ry).toExternalResource().use { ex ->
+                erode(image, rx, ry).toExternalResource().use { ex ->
                     subject.sendImage(ex)
                 }
             }
@@ -229,11 +218,11 @@ object DrawMeme : KotlinPlugin(
             startsWith("#flash") {
                 val image = getOrWaitImage() ?: return@startsWith
 
-                subject.sendImage(flashImage(image.getBytes()))
+                subject.sendImage(flashImage(image))
             }
 
             startsWith("#marble") {
-                val skImage = SkImage.makeFromEncoded((getOrWaitImage() ?: return@startsWith).getBytes())
+                val skImage = SkImage.makeFromEncoded(getOrWaitImage() ?: return@startsWith)
 
                 val s = it.split(' ')
                 fun getFloatOrNull(index: Int): Float? {
@@ -258,7 +247,7 @@ object DrawMeme : KotlinPlugin(
 
             finding(osuReg) {
                 val content = it.groupValues[1]
-                subject.sendImage(osu(if (content.isBlank()) "osu!" else content))
+                subject.sendImage(osu(content.ifBlank { "osu!" }))
             }
         }
     }

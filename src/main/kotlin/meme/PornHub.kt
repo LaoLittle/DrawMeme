@@ -10,7 +10,7 @@ private val pornColor = Color.makeRGB(255, 145, 0)
 private const val phHeight = 170
 private const val widthPlus = 12
 
-val phFont = Fonts["MiSans-Bold", 88F] usedBy "PornHub生成器"
+private val phFont = Fonts["MiSans-Bold", 88F] usedBy "PornHub生成器"
 fun pornHub(left: String, right: String): Surface {
     val leftText = TextLine.make(left, phFont)
     val leftPorn = Surface.makeRasterN32Premul(leftText.width.toInt() + (widthPlus shl 1), phHeight)

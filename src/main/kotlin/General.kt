@@ -3,14 +3,11 @@ package org.laolittle.plugin.draw
 import io.ktor.client.*
 import io.ktor.client.engine.okhttp.*
 import io.ktor.client.request.*
-import kotlinx.coroutines.TimeoutCancellationException
 import net.mamoe.mirai.event.events.MessageEvent
-import net.mamoe.mirai.message.data.Image
+import net.mamoe.mirai.message.data.*
 import net.mamoe.mirai.message.data.Image.Key.queryUrl
 import net.mamoe.mirai.message.data.MessageSource.Key.quote
-import net.mamoe.mirai.message.data.PlainText
-import net.mamoe.mirai.message.data.firstIsInstanceOrNull
-import net.mamoe.mirai.message.nextMessage
+import net.mamoe.mirai.message.nextMessageOrNull
 import net.mamoe.mirai.utils.ExternalResource.Companion.toExternalResource
 import org.jetbrains.skia.*
 import java.nio.file.Path
@@ -52,20 +49,29 @@ fun Rect.Companion.makeFromImage(image: SkImage) = Rect(0f, 0f, image.width.toFl
 
 fun Path.toExternalResource(formatName: String? = null) = readBytes().toExternalResource(formatName)
 
-internal suspend fun MessageEvent.getOrWaitImage(): Image? {
-    return (message.takeIf { m -> m.contains(Image) } ?: runCatching {
-        subject.sendMessage("请在30s内发送图片")
-        nextMessage(30_000) { event -> event.message.contains(Image) }
-    }.getOrElse { e ->
-        when (e) {
-            is TimeoutCancellationException -> {
-                subject.sendMessage(PlainText("超时未发送").plus(message.quote()))
-                return null
+internal suspend fun MessageEvent.getOrWaitImage(): ByteArray? {
+    message.forEach { m ->
+        when(m) {
+            is Image -> return httpClient.get(m.queryUrl())
+            is At -> return httpClient.get(m.avatarUrl)
+            is QuoteReply -> m.source.originalMessage.firstIsInstanceOrNull<Image>()?.let { img ->
+                return httpClient.get(img.queryUrl())
             }
-            else -> throw e
         }
-    }).firstIsInstanceOrNull<Image>()
+    }
+
+    return kotlin.run {
+        subject.sendMessage("请在30s内发送图片")
+        nextMessageOrNull(30_000) { event -> event.message.contains(Image) }?.let { m ->
+            httpClient.get(m.firstIsInstance<Image>().queryUrl())
+        }
+    } ?: kotlin.run {
+        subject.sendMessage(PlainText("超时未发送").plus(message.quote()))
+        null
+    }
 }
+
+val At.avatarUrl: String get() = "https://q1.qlogo.cn/g?b=qq&nk=$target&s=640"
 
 fun Bitmap.asImage() = SkImage.makeFromBitmap(this)
 

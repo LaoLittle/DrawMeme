@@ -14,11 +14,11 @@ private val osuImage = Image.makeFromResource("/Osu/logo.png")
 private val font = Fonts["Aller-Bold", 112.5F] usedBy "OSU图标生成"
 
 fun osu(text: String = "osu!"): Image {
-    val osuText: TextLine
     val yPos: Float
-    val textWidth = font.measureTextWidth(text, paintText)
+    var osuText = TextLine.make(text, font)
+    val textWidth = osuText.width
+
     if (textWidth <= 250) {
-        osuText = TextLine.make(text, font)
         yPos = 137.5F + osuText.height / 2
     }else {
         yPos = 210 - (textWidth - 255) / 20
