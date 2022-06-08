@@ -3,6 +3,7 @@ package org.laolittle.plugin.draw
 import io.ktor.client.*
 import io.ktor.client.engine.okhttp.*
 import io.ktor.client.request.*
+import kotlinx.serialization.json.Json
 import net.mamoe.mirai.event.events.MessageEvent
 import net.mamoe.mirai.message.data.*
 import net.mamoe.mirai.message.data.Image.Key.queryUrl
@@ -16,6 +17,11 @@ import org.jetbrains.skia.Image as SkImage
 
 internal val httpClient = HttpClient(OkHttp)
 internal val logger by DrawMeme::logger
+
+val json = Json {
+    ignoreUnknownKeys = true
+    prettyPrint = true
+}
 
 internal fun String.splitSpace(): List<String>? {
     val words =

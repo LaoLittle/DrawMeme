@@ -12,9 +12,9 @@ import net.mamoe.mirai.message.data.*
 import net.mamoe.mirai.message.data.Image.Key.queryUrl
 import net.mamoe.mirai.utils.ExternalResource.Companion.toExternalResource
 import net.mamoe.mirai.utils.info
-import org.laolittle.plugin.draw.Emoji.EmojiUtil.fullEmojiRegex
-import org.laolittle.plugin.draw.Emoji.EmojiUtil.toEmoji
 import org.laolittle.plugin.draw.custom.initCustomMemes
+import org.laolittle.plugin.draw.extension.Emoji.EmojiUtil.fullEmojiRegex
+import org.laolittle.plugin.draw.extension.Emoji.EmojiUtil.toEmoji
 import org.laolittle.plugin.draw.meme.*
 import org.laolittle.plugin.sendImage
 import org.laolittle.plugin.toExternalResource
@@ -37,11 +37,11 @@ object DrawMeme : KotlinPlugin(
         initCustomMemes()
 
         val patReg = Regex("""^摸+([我爆头])?""")
-        val choReg = Regex("#5(?:000|k)兆[\\s　]*(.+)")
+        val choReg = Regex("#5(?:000|k)兆 *(.+)")
         val zeroReg = Regex("""#(\d{1,3})""")
-        val erodeReg = Regex("""^#erode ?(\d*) ?(\d*)""")
+        val erodeReg = Regex("""^#erode *(\d*) *(\d*)""")
         val emojiReg = Regex("""^($fullEmojiRegex) *($fullEmojiRegex)$""")
-        val osuReg = Regex("""^#osu ?(.*)""")
+        val osuReg = Regex("""^#osu *(.*)""")
 
         globalEventChannel().subscribeGroupMessages(
             priority = EventPriority.NORMAL
@@ -153,10 +153,7 @@ object DrawMeme : KotlinPlugin(
                         httpClient.get<ByteArray>(it.avatarUrl).apply {
                             image = SkImage.makeFromEncoded(this)
                         }
-                    } ?: kotlin.run {
-                        subject.sendMessage("我不知道你要摸谁")
-                        return@finding
-                    }
+                    } ?: return@finding
                 }
 
                 patpat(image!!, delay).bytes.toExternalResource("GIF").use { subject.sendImage(it) }
@@ -229,9 +226,9 @@ object DrawMeme : KotlinPlugin(
                     return s.getOrNull(index)?.toFloatOrNull()
                 }
 
-                val foo = skImage.width / 10
-                val x = getFloatOrNull(0) ?: foo.toFloat()
-                val y = getFloatOrNull(1) ?: (foo / 10).toFloat()
+                val foo = skImage.width * .1f
+                val x = getFloatOrNull(0) ?: foo
+                val y = getFloatOrNull(1) ?: (foo * .1f)
                 val i = getFloatOrNull(2) ?: 1f
 
                 subject.sendImage(marble(skImage, MarbleFilter(x,y,i)).use { bitmap -> SkImage.makeFromBitmap(bitmap) })

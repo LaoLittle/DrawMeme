@@ -1,4 +1,4 @@
-package org.laolittle.plugin.draw
+package org.laolittle.plugin.draw.extension
 
 import org.jetbrains.skia.FontMgr
 import org.jetbrains.skia.Typeface

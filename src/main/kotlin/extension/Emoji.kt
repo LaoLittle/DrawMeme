@@ -1,4 +1,4 @@
-package org.laolittle.plugin.draw
+package org.laolittle.plugin.draw.extension
 
 data class Emoji(val code: Int) {
     private fun toSurrogates() = code.toChars()

@@ -1,4 +1,4 @@
-package org.laolittle.plugin.draw
+package config
 
 import kotlinx.serialization.Serializable
 import net.mamoe.mirai.console.data.AutoSavePluginConfig

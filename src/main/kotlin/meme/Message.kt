@@ -14,7 +14,7 @@ import org.jetbrains.skia.paragraph.ParagraphStyle
 import org.jetbrains.skia.paragraph.TextStyle
 import org.laolittle.plugin.Fonts
 import org.laolittle.plugin.draw.DrawMeme
-import org.laolittle.plugin.draw.GlobalParagraphMgr
+import org.laolittle.plugin.draw.extension.GlobalParagraphMgr
 import org.laolittle.plugin.draw.httpClient
 import org.laolittle.plugin.draw.makeFromImage
 import org.laolittle.plugin.usedBy
