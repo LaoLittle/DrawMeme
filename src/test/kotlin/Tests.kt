@@ -53,7 +53,7 @@ class Tests {
         val image = Image.makeFromEncoded(Path("atri.jpg").readBytes())
 
         fun random(): Float {
-            return Random.nextDouble(-15.0,15.0).toFloat()
+            return Random.nextDouble(-15.0, 15.0).toFloat()
         }
 
         Surface.makeRaster(image.imageInfo).apply {
@@ -62,12 +62,14 @@ class Tests {
                 drawImage(image, 0f, 0f)
                 drawImage(image, random(), random(), Paint().apply {
                     alpha = 100
-                    colorFilter = ColorFilter.makeMatrix(ColorMatrix(
-                        1F,0F,0.2F,0.3F,0F,
-                        0F,0F,0F,0F,0F,
-                        0F,0F,0F,0F,0F,
-                        0F,0F,0F,1F,0F,
-                    ))
+                    colorFilter = ColorFilter.makeMatrix(
+                        ColorMatrix(
+                            1F, 0F, 0.2F, 0.3F, 0F,
+                            0F, 0F, 0F, 0F, 0F,
+                            0F, 0F, 0F, 0F, 0F,
+                            0F, 0F, 0F, 1F, 0F,
+                        )
+                    )
                 })
             }
         }.makeImageSnapshot().encodeToData()?.let {
@@ -83,13 +85,15 @@ class Tests {
 
             canvas.apply {
                 drawImage(image, 0f, 0f, Paint().apply {
-                    colorFilter = ColorFilter.makeMatrix(ColorMatrix(
-                      //R  G  B  A  ?
-                        1F,0F,0F,0F,0F,       // R
-                        0F,1F,0F,0F,0F,       // G
-                        0.5F,0.6F,1F,.3F,0F, // B
-                        0F,0F,0F,1F,0F,       // A
-                    ))
+                    colorFilter = ColorFilter.makeMatrix(
+                        ColorMatrix(
+                            //R  G  B  A  ?
+                            1F, 0F, 0F, 0F, 0F,       // R
+                            0F, 1F, 0F, 0F, 0F,       // G
+                            0.5F, 0.6F, 1F, .3F, 0F, // B
+                            0F, 0F, 0F, 1F, 0F,       // A
+                        )
+                    )
                 })
             }
         }.makeImageSnapshot().encodeToData()?.let {
@@ -105,8 +109,8 @@ class Tests {
         }
 
         recorder.recordingCanvas?.apply {
-            drawCircle(0f,0f,100f, Paint())
-            drawImage(image, 0f,0f)
+            drawCircle(0f, 0f, 100f, Paint())
+            drawImage(image, 0f, 0f)
 
         }
 
@@ -114,9 +118,9 @@ class Tests {
         pic.serializeToData().bytes.also(Path("pic.bin")::writeBytes)
 
         Surface.makeRaster(image.imageInfo).apply {
-            canvas.drawImage(image,0f,0f)
+            canvas.drawImage(image, 0f, 0f)
             canvas.drawPicture(pic)
-           // pic.playback(canvas)
+            // pic.playback(canvas)
         }.makeImageSnapshot().bytes.also(Path("outpic.png")::writeBytes)
     }
 

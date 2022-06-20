@@ -23,7 +23,7 @@ fun Bitmap.mosaic(size: Int) {
     val h = height
 
     for (y in 0 until h step size) for (x in 0 until w step size) {
-        val color = getColor(x,y)
-        erase(color, IRect.makeXYWH(x,y,size,size))
+        val color = getColor(x, y)
+        erase(color, IRect.makeXYWH(x, y, size, size))
     }
 }

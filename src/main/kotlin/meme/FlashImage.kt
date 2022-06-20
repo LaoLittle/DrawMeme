@@ -13,7 +13,7 @@ fun flashImage(image: ByteArray): Image {
 
     val foo = min(w, h) * .30f
     val bar = foo * .5f
-    return Surface.makeRasterN32Premul(w,h).apply {
+    return Surface.makeRasterN32Premul(w, h).apply {
         writePixels(b, 0, 0)
         canvas.apply {
             drawPaint(Paint().apply {
@@ -23,12 +23,12 @@ fun flashImage(image: ByteArray): Image {
             translate(w * .5f - bar, h * .5f - bar)
 
             drawPath(Path().apply {
-                val x1 = foo *.65f
+                val x1 = foo * .65f
 
-                val p1 = Point(bar*.85f, bar*.85f)
-                val p4 = Point(bar*1.15f, bar*1.15f)
-                val p2 = Point(p4.x,p1.y)
-                val p3 = Point(p1.x,p4.y)
+                val p1 = Point(bar * .85f, bar * .85f)
+                val p4 = Point(bar * 1.15f, bar * 1.15f)
+                val p2 = Point(p4.x, p1.y)
+                val p3 = Point(p1.x, p4.y)
                 moveTo(x1, 0f)
                 lineTo(foo * .2f, p3.y)
                 lineTo(p3)

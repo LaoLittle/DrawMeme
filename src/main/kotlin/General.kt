@@ -48,7 +48,8 @@ internal fun String.splitSpace(): List<String>? {
 }
 
 internal fun SkImage.Companion.makeFromResource(name: String) = makeFromEncoded(
-    DrawMeme::class.java.getResourceAsStream(name)?.readBytes() ?: throw IllegalStateException("无法找到资源文件: $name")
+    DrawMeme::class.java.getResourceAsStream(name)?.readBytes()
+        ?: throw IllegalStateException("无法找到资源文件: $name")
 )
 
 fun Rect.Companion.makeFromImage(image: SkImage) = Rect(0f, 0f, image.width.toFloat(), image.height.toFloat())
@@ -57,7 +58,7 @@ fun Path.toExternalResource(formatName: String? = null) = readBytes().toExternal
 
 internal suspend fun MessageEvent.getOrWaitImage(): ByteArray? {
     message.forEach { m ->
-        when(m) {
+        when (m) {
             is Image -> return httpClient.get(m.queryUrl())
             is At -> return httpClient.get(m.avatarUrl)
             is QuoteReply -> m.source.originalMessage.firstIsInstanceOrNull<Image>()?.let { img ->

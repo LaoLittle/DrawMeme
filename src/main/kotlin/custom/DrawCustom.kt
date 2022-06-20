@@ -28,12 +28,12 @@ internal fun initCustomMemes() {
             startsWith("#${meme.name}") {
                 val avatars = arrayListOf<Deferred<Image>>()
                 message.forEach { m ->
-                   if (m is At) {
-                       avatars.add(DrawMeme.async {
-                           val id = m.target
-                           Image.makeFromEncoded(httpClient.get("https://q1.qlogo.cn/g?b=qq&nk=$id&s=640"))
-                       })
-                   }
+                    if (m is At) {
+                        avatars.add(DrawMeme.async {
+                            val id = m.target
+                            Image.makeFromEncoded(httpClient.get("https://q1.qlogo.cn/g?b=qq&nk=$id&s=640"))
+                        })
+                    }
                 }
 
                 meme.makeImage(*avatars.awaitAll().toTypedArray())

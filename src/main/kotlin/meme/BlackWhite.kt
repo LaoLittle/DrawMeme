@@ -56,6 +56,7 @@ internal val customFilter by lazy {
 
                 ColorFilter.makeMatrix(ColorMatrix(*arr))
             }
+
             else -> {
                 DrawMeme.logger.error("Unknown Type: $type at $it")
                 return@m
@@ -68,13 +69,13 @@ internal val customFilter by lazy {
     customs
 }
 private val defaultFilter = ColorFilter.makeMatrix(
-        ColorMatrix(
-            0.33F, 0.38F, 0.29F, 0F, 0F,
-            0.33F, 0.38F, 0.29F, 0F, 0F,
-            0.33F, 0.38F, 0.29F, 0F, 0F,
-            0.33F, 0.38F, 0.29F, 1F, 0F,
-        )
+    ColorMatrix(
+        0.33F, 0.38F, 0.29F, 0F, 0F,
+        0.33F, 0.38F, 0.29F, 0F, 0F,
+        0.33F, 0.38F, 0.29F, 0F, 0F,
+        0.33F, 0.38F, 0.29F, 1F, 0F,
     )
+)
 
 private val paintFilter = Paint()
 

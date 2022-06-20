@@ -1,4 +1,4 @@
-package org.laolittle.plugin.draw
+package org.laolittle.plugin.draw.extension
 
 import net.mamoe.mirai.contact.*
 import kotlin.math.max

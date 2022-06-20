@@ -15,6 +15,7 @@ import net.mamoe.mirai.utils.info
 import org.laolittle.plugin.draw.custom.initCustomMemes
 import org.laolittle.plugin.draw.extension.Emoji.EmojiUtil.fullEmojiRegex
 import org.laolittle.plugin.draw.extension.Emoji.EmojiUtil.toEmoji
+import org.laolittle.plugin.draw.extension.findUserOrNull
 import org.laolittle.plugin.draw.meme.*
 import org.laolittle.plugin.sendImage
 import org.laolittle.plugin.toExternalResource
@@ -24,7 +25,7 @@ object DrawMeme : KotlinPlugin(
     JvmPluginDescription(
         id = "org.laolittle.plugin.draw.DrawMeme",
         name = "DrawMeme",
-        version = "1.2.2",
+        version = "1.2.3",
     ) {
         author("LaoLittle")
 
@@ -67,8 +68,8 @@ object DrawMeme : KotlinPlugin(
                 val sp = msg.split("--")
                 val content = sp.first()
                 val filter = sp.getOrElse(1) { "" }
-                    blackWhite(content.trim(), image, filter).toExternalResource().use {
-                        subject.sendImage(it)
+                blackWhite(content.trim(), image, filter).toExternalResource().use {
+                    subject.sendImage(it)
                 }
             }
 
@@ -231,7 +232,11 @@ object DrawMeme : KotlinPlugin(
                 val y = getFloatOrNull(1) ?: (foo * .1f)
                 val i = getFloatOrNull(2) ?: 1f
 
-                subject.sendImage(marble(skImage, MarbleFilter(x,y,i)).use { bitmap -> SkImage.makeFromBitmap(bitmap) })
+                subject.sendImage(
+                    marble(
+                        skImage,
+                        MarbleFilter(x, y, i)
+                    ).use { bitmap -> SkImage.makeFromBitmap(bitmap) })
             }
 
             finding(emojiReg) {

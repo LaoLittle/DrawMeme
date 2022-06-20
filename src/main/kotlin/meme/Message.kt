@@ -163,6 +163,7 @@ class MessageImageNode(
                             drawImageRect(m.image, Rect.makeFromImage(m.image), Rect(0f, 0f, w, h))
                             translate(0f, 5f)
                         }
+
                         is Message.Plain -> {
                             m.content.paint(this, 0f, -10f)
                         }

@@ -20,7 +20,7 @@ fun osu(text: String = "osu!"): Image {
 
     if (textWidth <= 250) {
         yPos = 137.5F + osuText.height / 2
-    }else {
+    } else {
         yPos = 210 - (textWidth - 255) / 20
         osuText = TextLine.make(text, font.makeWithSize(250F / textWidth * 112.5F))
     }
