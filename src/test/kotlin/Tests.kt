@@ -1,11 +1,17 @@
 package org.laolittle.plugin.draw
 
+import io.ktor.client.*
+import io.ktor.client.engine.okhttp.*
+import io.ktor.client.request.*
 import kotlinx.coroutines.runBlocking
 import okhttp3.internal.toHexString
 import org.jetbrains.skia.*
 import org.laolittle.plugin.bytes
 import org.laolittle.plugin.draw.custom.CustomMeme
+import org.laolittle.plugin.draw.extension.Emoji
 import java.io.File
+import kotlin.coroutines.CoroutineContext
+import kotlin.coroutines.coroutineContext
 import kotlin.io.path.Path
 import kotlin.io.path.listDirectoryEntries
 import kotlin.io.path.readBytes
@@ -145,12 +151,40 @@ class Tests {
             println(it)
         }
     }
-    /*@Test
-    fun arrayList() {
-        val a = arrayListOf<Float>(12f)
 
-        a.add(22, 2f)
+    @Test
+    fun `my eyes`() {
+        runBlocking {
+            val context = this.coroutineContext
+            val context2 = coroutine()
 
-        println(a)
-    }*/
+            assert(context === context2)
+        }
+    }
+
+    @Test
+    fun get(): Unit = runBlocking {
+        HttpClient(OkHttp).use { c ->
+            val str: String = c.get("https://qun.qq.com/interactive/qunhonor?gc=634148065")
+
+            println(str)
+        }
+    }
+
+    @Test
+    fun emoji() {
+        val a = "\uD83E\uDE84"
+
+        println(Emoji.fullEmojiRegex.find(a))
+    }
+
+    suspend fun coroutine(): CoroutineContext {
+        return coroutineContext
+    }
+}
+
+class LaoString(private val block: StringBuilder.() -> Unit) {
+    override fun toString(): String {
+        return StringBuilder().apply(block).toString()
+    }
 }

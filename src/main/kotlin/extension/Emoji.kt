@@ -5,15 +5,19 @@ data class Emoji(val code: Int) {
 
     override fun toString() = String(toSurrogates())
 
-    override operator fun equals(other: Any?): Boolean =
-        when (other) {
+    override operator fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        return when (other) {
             is Emoji -> this.code == other.code
             else -> false
         }
+    }
 
     override fun hashCode() = code
 
     companion object EmojiUtil {
+        //val PUDDING = "\uD83E\uDE84".toEmoji()
+
         private const val MIN_LOW_SURROGATE = '\uDC00'
 
         private const val MIN_HIGH_SURROGATE = '\uD800'
@@ -50,7 +54,7 @@ data class Emoji(val code: Int) {
         private val Int.lowSurrogate get() = (and(0x3ff) + MIN_LOW_SURROGATE.code).toChar()
 
         private const val MiscellaneousSymbolsAndPictographs = "[\\uD83C\\uDF00-\\uD83D\\uDDFF]"
-        private const val SupplementalSymbolsAndPictographs = "[\\uD83E\\uDD00-\\uD83E\\uDDFF]"
+        private const val SupplementalSymbolsAndPictographs = "[\\uD83E\\uDD00-\\uD83E\\uDEFF]"
         private const val Emoticons = "[\\uD83D\\uDE00-\\uD83D\\uDE4F]"
         private const val TransportAndMapSymbols = "[\\uD83D\\uDE80-\\uD83D\\uDEFF]"
         private const val MiscellaneousSymbols = "[\\u2600-\\u26FF]\\uFE0F?"

@@ -6,7 +6,6 @@ import net.mamoe.mirai.console.plugin.jvm.KotlinPlugin
 import net.mamoe.mirai.contact.Contact.Companion.sendImage
 import net.mamoe.mirai.contact.nameCardOrNick
 import net.mamoe.mirai.event.EventPriority
-import net.mamoe.mirai.event.globalEventChannel
 import net.mamoe.mirai.event.subscribeGroupMessages
 import net.mamoe.mirai.message.data.*
 import net.mamoe.mirai.message.data.Image.Key.queryUrl
@@ -25,7 +24,7 @@ object DrawMeme : KotlinPlugin(
     JvmPluginDescription(
         id = "org.laolittle.plugin.draw.DrawMeme",
         name = "DrawMeme",
-        version = "1.2.3",
+        version = "1.2.4",
     ) {
         author("LaoLittle")
 
@@ -44,7 +43,7 @@ object DrawMeme : KotlinPlugin(
         val emojiReg = Regex("""^($fullEmojiRegex) *($fullEmojiRegex)$""")
         val osuReg = Regex("""^#osu *(.*)""")
 
-        globalEventChannel().subscribeGroupMessages(
+        drawMemeEventChannel.subscribeGroupMessages(
             priority = EventPriority.NORMAL
         ) {
             startsWith("#ph") { str ->
