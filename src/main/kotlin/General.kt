@@ -11,6 +11,7 @@ import net.mamoe.mirai.message.data.MessageSource.Key.quote
 import net.mamoe.mirai.message.nextMessageOrNull
 import net.mamoe.mirai.utils.ExternalResource.Companion.toExternalResource
 import org.jetbrains.skia.*
+import org.laolittle.plugin.gif.GifLibrary
 import java.nio.file.Path
 import kotlin.io.path.readBytes
 import org.jetbrains.skia.Image as SkImage
@@ -103,3 +104,12 @@ fun Canvas.drawImageRectLinear(image: SkImage, dst: Rect, paint: Paint?) =
 fun Canvas.drawImageRectLinear(image: SkImage, dst: Rect) = drawImageRectLinear(image, dst, null)
 
 suspend fun Image.getBytes(): ByteArray = httpClient.get(queryUrl())
+
+val gifSupported by lazy {
+    try {
+        GifLibrary.load()
+        true
+    } catch (e: UnsatisfiedLinkError) {
+        false
+    }
+}

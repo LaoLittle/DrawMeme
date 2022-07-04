@@ -6,6 +6,7 @@ import org.jetbrains.skia.*
 import org.laolittle.plugin.Fonts
 import org.laolittle.plugin.bytes
 import org.laolittle.plugin.draw.DrawMeme
+import org.laolittle.plugin.draw.gifSupported
 import org.laolittle.plugin.gif.GifEncoder
 import org.laolittle.plugin.gif.GifSetting
 import org.laolittle.plugin.usedBy
@@ -117,7 +118,7 @@ suspend fun blackWhite(text: String, image: ByteArray, _filter: String): ByteArr
     }
 
     codec.use {
-        return if (codec.encodedImageFormat == EncodedImageFormat.GIF) {
+        return if (gifSupported && codec.encodedImageFormat == EncodedImageFormat.GIF) {
             val bitmaps = Array(codec.frameCount) {
                 //DrawMeme.async {   // multi-thread will make jvm crash
                 Bitmap().apply {
