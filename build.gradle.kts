@@ -3,11 +3,11 @@ plugins {
     kotlin("jvm") version kotlinVersion
     kotlin("plugin.serialization") version kotlinVersion
 
-    id("net.mamoe.mirai-console") version "2.10.3"
+    id("net.mamoe.mirai-console") version "2.12.0"
 }
 
 group = "org.laolittle.plugin.draw"
-version = "1.2.4"
+version = "1.3.0"
 
 repositories {
     mavenCentral()
@@ -17,6 +17,10 @@ repositories {
 }
 
 dependencies {
+    val ktorVersion = "1.6.7"
+    implementation("io.ktor:ktor-client-core-jvm:$ktorVersion")
+    implementation("io.ktor:ktor-client-okhttp:$ktorVersion")
+
     val smVer = "1.0.8"
     compileOnly("com.github.LaoLittle:SkikoMirai:$smVer")
     testImplementation("com.github.LaoLittle:SkikoMirai:$smVer")
