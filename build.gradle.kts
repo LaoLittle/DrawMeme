@@ -1,13 +1,13 @@
 plugins {
-    val kotlinVersion = "1.7.0"
+    val kotlinVersion = "1.9.0"
     kotlin("jvm") version kotlinVersion
     kotlin("plugin.serialization") version kotlinVersion
 
-    id("net.mamoe.mirai-console") version "2.12.0"
+    id("net.mamoe.mirai-console") version "2.14.0"
 }
 
 group = "org.laolittle.plugin.draw"
-version = "1.3.0"
+version = "1.4.0"
 
 repositories {
     mavenCentral()
@@ -17,11 +17,11 @@ repositories {
 }
 
 dependencies {
-    val ktorVersion = "1.6.7"
+    val ktorVersion = "2.3.2"
     implementation("io.ktor:ktor-client-core-jvm:$ktorVersion")
     implementation("io.ktor:ktor-client-okhttp:$ktorVersion")
 
-    val smVer = "1.0.8"
+    val smVer = "1.1.3"
     compileOnly("com.github.LaoLittle:SkikoMirai:$smVer")
     testImplementation("com.github.LaoLittle:SkikoMirai:$smVer")
     testImplementation(kotlin("test"))
@@ -40,7 +40,7 @@ dependencies {
         else -> error("Unsupported arch: $osArch")
     }
 
-    val version = "0.7.22"
+    val version = "0.7.68"
     val target = "${targetOs}-${targetArch}"
 
     testImplementation("org.jetbrains.skiko:skiko-awt-runtime-$target:$version")

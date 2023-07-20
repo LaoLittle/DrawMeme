@@ -1,5 +1,6 @@
 package org.laolittle.plugin.draw
 
+import io.ktor.client.call.*
 import io.ktor.client.request.*
 import net.mamoe.mirai.console.plugin.jvm.JvmPluginDescription
 import net.mamoe.mirai.console.plugin.jvm.KotlinPlugin
@@ -124,7 +125,9 @@ object DrawMeme : KotlinPlugin(
                 var image: SkImage? = null
                 when (foo) {
                     "我" -> {
-                        val bytes = httpClient.get<ByteArray>(sender.avatarUrl)
+                        val bytes = httpClient.get(sender.avatarUrl)
+
+                            .body<ByteArray>()
                         image = SkImage.makeFromEncoded(bytes)
                     }
 
@@ -134,12 +137,13 @@ object DrawMeme : KotlinPlugin(
                 for (single in message) {
                     if (null != image) break
                     when (single) {
-                        is Image -> httpClient.get<ByteArray>(single.queryUrl()).apply {
+                        is Image -> httpClient.get(single.queryUrl())
+                            .body<ByteArray>().apply {
                             image = SkImage.makeFromEncoded(this)
                         }
 
                         is At -> subject[single.target]?.let {
-                            httpClient.get<ByteArray>(it.avatarUrl).apply {
+                            httpClient.get(it.avatarUrl).body<ByteArray>().apply {
                                 image = SkImage.makeFromEncoded(this)
                             }
                         }
@@ -150,7 +154,7 @@ object DrawMeme : KotlinPlugin(
                     val name = message.content.replace(patReg, "")
 
                     subject.findUserOrNull(name)?.let {
-                        httpClient.get<ByteArray>(it.avatarUrl).apply {
+                        httpClient.get(it.avatarUrl).body<ByteArray>().apply {
                             image = SkImage.makeFromEncoded(this)
                         }
                     } ?: return@finding

@@ -1,7 +1,8 @@
 package org.laolittle.plugin.draw.meme
 
+import io.ktor.client.call.*
+import io.ktor.client.network.sockets.*
 import io.ktor.client.request.*
-import io.ktor.network.sockets.*
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.decodeFromString
 import org.laolittle.plugin.draw.DrawMeme
@@ -36,7 +37,7 @@ internal suspend fun getEmojiMix(main: Emoji, aux: Emoji): File? {
     return runCatching {
         if (file.isFile) file
         else {
-            file.writeBytes(httpClient.get("$emojiMixURL/$date/u$mainCode/$fileName"))
+            file.writeBytes(httpClient.get("$emojiMixURL/$date/u$mainCode/$fileName").body())
             file
         }
 

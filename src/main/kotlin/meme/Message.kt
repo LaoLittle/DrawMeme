@@ -1,5 +1,6 @@
 package org.laolittle.plugin.draw.meme
 
+import io.ktor.client.call.*
 import io.ktor.client.request.*
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
@@ -177,7 +178,7 @@ class MessageImageNode(
 
     private suspend fun initAvatar() {
         if (null == _avatar) {
-            val bytes = httpClient.get<ByteArray>(avatarUrl)
+            val bytes = httpClient.get(avatarUrl).body<ByteArray>()
             _avatar = SkImage.makeFromEncoded(bytes)
         }
     }

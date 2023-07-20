@@ -1,6 +1,7 @@
 package org.laolittle.plugin.draw
 
 import io.ktor.client.*
+import io.ktor.client.call.*
 import io.ktor.client.engine.okhttp.*
 import io.ktor.client.request.*
 import kotlinx.serialization.json.Json
@@ -60,10 +61,10 @@ fun Path.toExternalResource(formatName: String? = null) = readBytes().toExternal
 internal suspend fun MessageEvent.getOrWaitImage(): ByteArray? {
     message.forEach { m ->
         when (m) {
-            is Image -> return httpClient.get(m.queryUrl())
-            is At -> return httpClient.get(m.avatarUrl)
+            is Image -> return httpClient.get(m.queryUrl()).body()
+            is At -> return httpClient.get(m.avatarUrl).body()
             is QuoteReply -> m.source.originalMessage.firstIsInstanceOrNull<Image>()?.let { img ->
-                return httpClient.get(img.queryUrl())
+                return httpClient.get(img.queryUrl()).body()
             }
         }
     }
@@ -71,7 +72,7 @@ internal suspend fun MessageEvent.getOrWaitImage(): ByteArray? {
     return kotlin.run {
         subject.sendMessage("请在30s内发送图片")
         nextMessageOrNull(30_000) { event -> event.message.contains(Image) }?.let { m ->
-            httpClient.get(m.firstIsInstance<Image>().queryUrl())
+            httpClient.get(m.firstIsInstance<Image>().queryUrl()).body()
         }
     } ?: kotlin.run {
         subject.sendMessage(PlainText("超时未发送").plus(message.quote()))
@@ -103,7 +104,7 @@ fun Canvas.drawImageRectLinear(image: SkImage, dst: Rect, paint: Paint?) =
 
 fun Canvas.drawImageRectLinear(image: SkImage, dst: Rect) = drawImageRectLinear(image, dst, null)
 
-suspend fun Image.getBytes(): ByteArray = httpClient.get(queryUrl())
+suspend fun Image.getBytes(): ByteArray = httpClient.get(queryUrl()).body()
 
 val gifSupported by lazy {
     try {

@@ -1,5 +1,6 @@
 package org.laolittle.plugin.draw.custom
 
+import io.ktor.client.call.*
 import io.ktor.client.request.*
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.async
@@ -31,7 +32,7 @@ internal fun initCustomMemes() {
                     if (m is At) {
                         avatars.add(DrawMeme.async {
                             val id = m.target
-                            Image.makeFromEncoded(httpClient.get("https://q1.qlogo.cn/g?b=qq&nk=$id&s=640"))
+                            Image.makeFromEncoded(httpClient.get("https://q1.qlogo.cn/g?b=qq&nk=$id&s=640").body())
                         })
                     }
                 }
